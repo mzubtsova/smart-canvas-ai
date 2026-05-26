@@ -30,7 +30,7 @@ function cleanAndParseJSON(text) {
 }
 
 /**
- * Make API request to Gemini API
+ * Make API request to Gemini API with robust retries
  */
 async function callGemini(prompt, apiKey, systemInstruction = '') {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
@@ -53,26 +53,57 @@ async function callGemini(prompt, apiKey, systemInstruction = '') {
     };
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(requestBody)
-  });
+  const maxRetries = 3;
+  let delay = 1500; // Start with 1.5 seconds
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errMsg = errorData.error?.message || `HTTP error! status: ${response.status}`;
+        
+        // Retry on 503 (high demand), 429 (rate limit), or if the message mentions overload/demand
+        const isRetryable = response.status === 503 || 
+                            response.status === 429 || 
+                            errMsg.toLowerCase().includes('demand') || 
+                            errMsg.toLowerCase().includes('overloaded') ||
+                            errMsg.toLowerCase().includes('resource_exhausted') ||
+                            errMsg.toLowerCase().includes('capacity');
+
+        if (isRetryable && attempt < maxRetries) {
+          console.warn(`Gemini API attempt ${attempt} failed with: "${errMsg}". Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2.5; // Exponential backoff
+          continue;
+        }
+        
+        throw new Error(errMsg);
+      }
+
+      const data = await response.json();
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!textResponse) {
+        throw new Error("No response text received from Gemini.");
+      }
+
+      return cleanAndParseJSON(textResponse);
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      console.warn(`Gemini API attempt ${attempt} threw: "${error.message}". Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2.5;
+    }
   }
-
-  const data = await response.json();
-  const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!textResponse) {
-    throw new Error("No response text received from Gemini.");
-  }
-
-  return cleanAndParseJSON(textResponse);
 }
 
 /**
