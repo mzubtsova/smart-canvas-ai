@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { parseLiquid } from '../utils/liquidParser';
-import { Code2, Database, Eye, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react';
+import { exportTemplateToBraze } from '../services/braze';
+import { Code2, Database, Eye, AlertTriangle, RefreshCw, Sparkles, Send, X, Loader2, Server } from 'lucide-react';
 
 const MOCK_PROFILES = [
   {
@@ -84,19 +85,30 @@ const DEFAULT_CODE = `<!DOCTYPE html>
 </html>`;
 
 export default function LiquidSandbox({ campaignData, setCampaignData, triggerToast }) {
-  // Use campaign HTML if available, otherwise fallback to default
   const [code, setCode] = useState(campaignData.emailTemplateHtml || DEFAULT_CODE);
   const [activeProfileIdx, setActiveProfileIdx] = useState(0);
   const [jsonText, setJsonText] = useState(JSON.stringify(MOCK_PROFILES[0].data, null, 2));
   const [parsedHtml, setParsedHtml] = useState('');
   const [jsonError, setJsonError] = useState('');
 
+  // Braze Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportName, setExportName] = useState('SmartCanvas Campaign Template');
+  const [exportSubject, setExportSubject] = useState(campaignData.subjectLineA || 'Special Offer for You!');
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  
+  const hasBrazeKey = !!localStorage.getItem('braze_api_key');
+
   // Update current code when shared campaignData changes
   useEffect(() => {
     if (campaignData.emailTemplateHtml) {
       setCode(campaignData.emailTemplateHtml);
     }
-  }, [campaignData.emailTemplateHtml]);
+    if (campaignData.subjectLineA) {
+      setExportSubject(campaignData.subjectLineA);
+    }
+  }, [campaignData.emailTemplateHtml, campaignData.subjectLineA]);
 
   // Sync JSON text when active profile selection changes
   const selectProfile = (idx) => {
@@ -106,19 +118,17 @@ export default function LiquidSandbox({ campaignData, setCampaignData, triggerTo
     triggerToast(`Applied mock profile: ${MOCK_PROFILES[idx].name}`);
   };
 
-  // Re-evaluate template whenever code, json text, or JSON validation status changes
+  // Re-evaluate template whenever code or json text changes
   useEffect(() => {
     try {
       const parsedContext = JSON.parse(jsonText);
       setJsonError('');
       
-      // Update local setCampaignData structure so other components can fetch the latest sandbox code
       setCampaignData(prev => ({
         ...prev,
         emailTemplateHtml: code
       }));
 
-      // Parse HTML with Liquid engine
       const rendered = parseLiquid(code, parsedContext);
       setParsedHtml(rendered);
     } catch (e) {
@@ -141,8 +151,52 @@ export default function LiquidSandbox({ campaignData, setCampaignData, triggerTo
     }
   };
 
+  const handleOpenExport = () => {
+    setExportError('');
+    // Dynamically set default template name based on context
+    const timestamp = new Date().toLocaleDateString();
+    setExportName(`SmartCanvas Campaign - ${timestamp}`);
+    setExportSubject(campaignData.subjectLineA || 'Special Offer for You!');
+    setShowExportModal(true);
+  };
+
+  const handleConfirmExport = async (e) => {
+    e.preventDefault();
+    if (!exportName.trim() || !exportSubject.trim()) return;
+
+    setIsExporting(true);
+    setExportError('');
+
+    try {
+      const apiKey = localStorage.getItem('braze_api_key');
+      const endpoint = localStorage.getItem('braze_api_endpoint') || 'rest.iad-01.braze.com';
+
+      const result = await exportTemplateToBraze({
+        templateName: exportName,
+        subject: exportSubject,
+        body: code,
+        apiKey,
+        endpoint
+      });
+
+      if (result.success) {
+        setShowExportModal(false);
+        if (result.simulated) {
+          triggerToast(`Simulated Export Successful! (Template ID: ${result.templateId})`);
+        } else {
+          triggerToast(`Successfully exported template to Braze! (ID: ${result.templateId})`);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setExportError(err.message || "Failed to export template to Braze.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
-    <div className="fade-in split-view-triple" style={{ flex: 1, height: 'calc(100vh - 12rem)', minHeight: '550px' }}>
+    <div className="fade-in split-view-triple" style={{ flex: 1, height: 'calc(100vh - 12rem)', minHeight: '550px', position: 'relative' }}>
       
       {/* Panel 1: Code Editor */}
       <div className="editor-container">
@@ -151,13 +205,22 @@ export default function LiquidSandbox({ campaignData, setCampaignData, triggerTo
             <Code2 size={16} style={{ color: 'var(--accent-primary)' }} />
             <span className="editor-title">HTML & Liquid Editor</span>
           </div>
-          <button 
-            onClick={resetTemplate} 
-            className="btn btn-secondary" 
-            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderColor: 'transparent' }}
-          >
-            Reset
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              onClick={handleOpenExport}
+              className="btn btn-success" 
+              style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+            >
+              <Send size={12} /> Export to Braze
+            </button>
+            <button 
+              onClick={resetTemplate} 
+              className="btn btn-secondary" 
+              style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderColor: 'transparent' }}
+            >
+              Reset
+            </button>
+          </div>
         </div>
         <textarea
           className="editor-textarea"
@@ -265,6 +328,148 @@ export default function LiquidSandbox({ campaignData, setCampaignData, triggerTo
           />
         )}
       </div>
+
+      {/* Export to Braze Overlay Modal */}
+      {showExportModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div className="panel fade-in" style={{
+            width: '100%',
+            maxWidth: '500px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setShowExportModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <Server size={18} style={{ color: 'var(--success)' }} />
+              <h3 style={{ fontSize: '1.15rem' }}>Export HTML Template to Braze</h3>
+            </div>
+
+            {/* Notification if simulated */}
+            {!hasBrazeKey && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                padding: '0.75rem',
+                backgroundColor: 'rgba(245,158,11,0.08)',
+                border: '1px solid rgba(245,158,11,0.15)',
+                borderRadius: 'var(--border-radius-sm)',
+                color: 'var(--warning)',
+                fontSize: '0.8rem',
+                lineHeight: '1.4',
+                marginBottom: '1.25rem'
+              }}>
+                <Info size={14} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+                <span>
+                  **Demo Mode**: No Braze REST credentials saved. The app will perform a **simulated export** for interview presentation purposes. To connect to your real workspace, set keys in Settings.
+                </span>
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmExport}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="export-name">Template Name (in Braze)</label>
+                <input
+                  id="export-name"
+                  type="text"
+                  className="form-input"
+                  value={exportName}
+                  onChange={(e) => setExportName(e.target.value)}
+                  placeholder="E.g., SmartCanvas Win-back v1"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="export-subject">Email Subject Line</label>
+                <input
+                  id="export-subject"
+                  type="text"
+                  className="form-input"
+                  value={exportSubject}
+                  onChange={(e) => setExportSubject(e.target.value)}
+                  placeholder="Subject line text..."
+                  required
+                />
+              </div>
+
+              {exportError && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem',
+                  backgroundColor: 'rgba(244,63,94,0.1)',
+                  border: '1px solid rgba(244,63,94,0.2)',
+                  borderRadius: 'var(--border-radius-sm)',
+                  color: 'var(--error)',
+                  fontSize: '0.85rem',
+                  marginBottom: '1.25rem'
+                }}>
+                  <AlertTriangle size={14} />
+                  <span>{exportError}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowExportModal(false)}
+                  style={{ flex: 1 }}
+                  disabled={isExporting}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  style={{ flex: 1 }}
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="spin" size={16} /> Exporting...
+                    </>
+                  ) : (
+                    <>
+                      Confirm Export <Send size={14} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
