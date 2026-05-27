@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { parseLiquid } from '../utils/liquidParser';
 import { exportTemplateToBraze } from '../services/braze';
-import { Code2, Database, Eye, AlertTriangle, RefreshCw, Sparkles, Send, X, Loader2, Server } from 'lucide-react';
+import { Code2, Database, Eye, AlertTriangle, RefreshCw, Sparkles, Send, X, Loader2, Server, Info } from 'lucide-react';
 
 const MOCK_PROFILES = [
   {
