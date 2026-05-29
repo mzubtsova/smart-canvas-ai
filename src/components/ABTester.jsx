@@ -16,19 +16,57 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
   const [isLoading, setIsLoading] = useState(false);
   const [simResults, setSimResults] = useState(null);
 
+  const [variantAIdx, setVariantAIdx] = useState(0);
+  const [variantBIdx, setVariantBIdx] = useState(1);
+
   const handleAutofill = () => {
-    if (!campaignData.subjectLineA && !campaignData.subjectLineB) {
+    const subjects = campaignData.subjectLines && campaignData.subjectLines.length > 0
+      ? campaignData.subjectLines
+      : [campaignData.subjectLineA, campaignData.subjectLineB].filter(Boolean);
+    const pushes = campaignData.pushNotifications && campaignData.pushNotifications.length > 0
+      ? campaignData.pushNotifications
+      : [campaignData.pushNotificationA, campaignData.pushNotificationB].filter(Boolean);
+
+    if (subjects.length === 0) {
       triggerToast("No generated campaign found! Go to Campaign Copilot first.");
       return;
     }
-    
-    setSubjectA(campaignData.subjectLineA || '');
-    setCopyA(campaignData.pushNotificationA || '');
-    
-    setSubjectB(campaignData.subjectLineB || '');
-    setCopyB(campaignData.pushNotificationB || '');
+
+    setVariantAIdx(0);
+    setVariantBIdx(subjects.length > 1 ? 1 : 0);
+
+    setSubjectA(subjects[0] || '');
+    setCopyA(pushes[0] || '');
+    setSubjectB(subjects[1] || subjects[0] || '');
+    setCopyB(pushes[1] || pushes[0] || '');
     
     triggerToast("Autofilled copy variants from Campaign Copilot!");
+  };
+
+  const handleVariantASelect = (idx) => {
+    setVariantAIdx(idx);
+    const subjects = campaignData.subjectLines && campaignData.subjectLines.length > 0
+      ? campaignData.subjectLines
+      : [campaignData.subjectLineA, campaignData.subjectLineB].filter(Boolean);
+    const pushes = campaignData.pushNotifications && campaignData.pushNotifications.length > 0
+      ? campaignData.pushNotifications
+      : [campaignData.pushNotificationA, campaignData.pushNotificationB].filter(Boolean);
+
+    if (subjects[idx]) setSubjectA(subjects[idx]);
+    if (pushes[idx]) setCopyA(pushes[idx]);
+  };
+
+  const handleVariantBSelect = (idx) => {
+    setVariantBIdx(idx);
+    const subjects = campaignData.subjectLines && campaignData.subjectLines.length > 0
+      ? campaignData.subjectLines
+      : [campaignData.subjectLineA, campaignData.subjectLineB].filter(Boolean);
+    const pushes = campaignData.pushNotifications && campaignData.pushNotifications.length > 0
+      ? campaignData.pushNotifications
+      : [campaignData.pushNotificationA, campaignData.pushNotificationB].filter(Boolean);
+
+    if (subjects[idx]) setSubjectB(subjects[idx]);
+    if (pushes[idx]) setCopyB(pushes[idx]);
   };
 
   const handleSimulate = async (e) => {
@@ -67,9 +105,9 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       
+      {/* Left Inputs Section */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '2rem' }}>
         
-        {/* Left Inputs Section */}
         <div className="panel" style={{ height: 'fit-content' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <h3 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -108,9 +146,23 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
               borderRadius: 'var(--border-radius-md)',
               marginBottom: '1rem'
             }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.75rem' }}>
-                Variant A
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>
+                  Variant A
+                </span>
+                {campaignData.subjectLines && campaignData.subjectLines.length > 0 && (
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.75rem', padding: '0.15rem 0.4rem', width: 'auto', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                    onChange={(e) => handleVariantASelect(Number(e.target.value))}
+                    value={variantAIdx}
+                  >
+                    {campaignData.subjectLines.map((_, idx) => (
+                      <option key={idx} value={idx}>Use Option #{idx + 1}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                 <label className="form-label" style={{ fontSize: '0.75rem' }}>Subject Line</label>
                 <input
@@ -144,9 +196,23 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
               borderRadius: 'var(--border-radius-md)',
               marginBottom: '1rem'
             }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.75rem' }}>
-                Variant B
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-secondary)', textTransform: 'uppercase' }}>
+                  Variant B
+                </span>
+                {campaignData.subjectLines && campaignData.subjectLines.length > 0 && (
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.75rem', padding: '0.15rem 0.4rem', width: 'auto', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                    onChange={(e) => handleVariantBSelect(Number(e.target.value))}
+                    value={variantBIdx}
+                  >
+                    {campaignData.subjectLines.map((_, idx) => (
+                      <option key={idx} value={idx}>Use Option #{idx + 1}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                 <label className="form-label" style={{ fontSize: '0.75rem' }}>Subject Line</label>
                 <input

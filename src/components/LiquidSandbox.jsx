@@ -84,7 +84,7 @@ const DEFAULT_CODE = `<!DOCTYPE html>
 </body>
 </html>`;
 
-export default function LiquidSandbox({ campaignData, setCampaignData, triggerToast }) {
+export default function LiquidSandbox({ campaignData, setCampaignData, variablesList, triggerToast }) {
   const [code, setCode] = useState(campaignData.emailTemplateHtml || DEFAULT_CODE);
   const [activeProfileIdx, setActiveProfileIdx] = useState(0);
   const [jsonText, setJsonText] = useState(JSON.stringify(MOCK_PROFILES[0].data, null, 2));
@@ -109,6 +109,53 @@ export default function LiquidSandbox({ campaignData, setCampaignData, triggerTo
       setExportSubject(campaignData.subjectLineA);
     }
   }, [campaignData.emailTemplateHtml, campaignData.subjectLineA]);
+
+  // Helper to inject missing customization variables into profile JSON
+  const syncCustomVariables = (jsonStr, varsList) => {
+    try {
+      const obj = JSON.parse(jsonStr);
+      let modified = false;
+
+      varsList.forEach(variable => {
+        const parts = variable.id.split('.');
+        let current = obj;
+
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          if (i === parts.length - 1) {
+            if (current[part] === undefined) {
+              if (part.includes('points') || part.includes('balance') || part.includes('count') || part.includes('needed') || part.includes('multiplier')) {
+                current[part] = 100;
+              } else if (part.includes('is_') || part.includes('has_') || part.includes('vip')) {
+                current[part] = true;
+              } else {
+                current[part] = `[${part.replace(/_/g, ' ')}]`;
+              }
+              modified = true;
+            }
+          } else {
+            if (current[part] === undefined || typeof current[part] !== 'object') {
+              current[part] = {};
+              modified = true;
+            }
+            current = current[part];
+          }
+        }
+      });
+
+      if (modified) {
+        return JSON.stringify(obj, null, 2);
+      }
+    } catch (e) {
+      // Ignore JSON parsing errors
+    }
+    return jsonStr;
+  };
+
+  // Sync variables list to JSON editor
+  useEffect(() => {
+    setJsonText(prev => syncCustomVariables(prev, variablesList));
+  }, [variablesList, activeProfileIdx]);
 
   // Sync JSON text when active profile selection changes
   const selectProfile = (idx) => {
@@ -195,6 +242,24 @@ export default function LiquidSandbox({ campaignData, setCampaignData, triggerTo
     }
   };
 
+  const insertTagAtCursor = (tagId) => {
+    const textarea = document.getElementById('sandbox-html-editor');
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const insertText = `{{ ${tagId} }}`;
+    const newText = text.substring(0, start) + insertText + text.substring(end);
+
+    setCode(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + insertText.length, start + insertText.length);
+    }, 50);
+  };
+
   return (
     <div className="fade-in split-view-triple" style={{ flex: 1, height: 'calc(100vh - 12rem)', minHeight: '550px', position: 'relative' }}>
       
@@ -222,7 +287,27 @@ export default function LiquidSandbox({ campaignData, setCampaignData, triggerTo
             </button>
           </div>
         </div>
+
+        {/* Quick-Insert Pill Buttons */}
+        <div style={{ padding: '0.5rem 1rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Click tag to insert at cursor:</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '60px', overflowY: 'auto' }}>
+            {variablesList.map(tag => (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() => insertTagAtCursor(tag.id)}
+                className="btn btn-secondary"
+                style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', textTransform: 'none', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
+              >
+                {tag.id}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <textarea
+          id="sandbox-html-editor"
           className="editor-textarea"
           value={code}
           onChange={(e) => setCode(e.target.value)}

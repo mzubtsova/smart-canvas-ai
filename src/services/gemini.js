@@ -109,20 +109,18 @@ async function callGemini(prompt, apiKey, systemInstruction = '') {
 /**
  * Draft a campaign (Subject lines, push, HTML template with Liquid syntax)
  */
-export async function generateCampaign({ objective, voice, variables }, apiKey) {
+export async function generateCampaign({ objective, voice, variables, variantsCount = 2 }, apiKey) {
   if (!apiKey) {
     // Return rich simulated mock data contextually
-    return getMockCampaign(objective, voice, variables);
+    return getMockCampaign(objective, voice, variables, variantsCount);
   }
 
   const systemInstruction = `You are an expert lifecycle email marketer and Braze HTML developer.
-Generate subject lines, push notifications, and a modern, responsive HTML email template using Liquid syntax for personalization.
+Generate exactly ${variantsCount} subject line variants, exactly ${variantsCount} push notification variants, and a modern, responsive HTML email template using Liquid syntax for personalization.
 Return your output ONLY as a JSON object matching this structure:
 {
-  "subjectLineA": "...",
-  "subjectLineB": "...",
-  "pushNotificationA": "...",
-  "pushNotificationB": "...",
+  "subjectLines": ["Subject Variant 1", "Subject Variant 2", ...],
+  "pushNotifications": ["Push Variant 1", "Push Variant 2", ...],
   "emailTemplateHtml": "..."
 }
 Guidelines for the emailTemplateHtml:
@@ -137,10 +135,27 @@ Guidelines for the emailTemplateHtml:
   const prompt = `Objective: ${objective}
 Brand Voice / Tone: ${voice}
 Variables to include: ${variables.join(', ')}
+Number of copy variants requested: ${variantsCount}
 
 Please draft a high-quality campaign following the JSON schema structure exactly.`;
 
-  return callGemini(prompt, apiKey, systemInstruction);
+  const result = await callGemini(prompt, apiKey, systemInstruction);
+
+  if (result) {
+    if (!result.subjectLines) {
+      result.subjectLines = [result.subjectLineA, result.subjectLineB].filter(Boolean);
+    }
+    if (!result.pushNotifications) {
+      result.pushNotifications = [result.pushNotificationA, result.pushNotificationB].filter(Boolean);
+    }
+    // Backward compatibility mappings
+    result.subjectLineA = result.subjectLines[0] || '';
+    result.subjectLineB = result.subjectLines[1] || '';
+    result.pushNotificationA = result.pushNotifications[0] || '';
+    result.pushNotificationB = result.pushNotifications[1] || '';
+  }
+
+  return result;
 }
 
 /**
@@ -184,16 +199,64 @@ Review both variants and return the critiques in the JSON schema format.`;
 // MOCK DATA GENERATORS (FALLBACKS)
 // ==========================================
 
-function getMockCampaign(objective, voice, variables) {
+function getMockCampaign(objective, voice, variables, variantsCount = 2) {
   const lowercaseObj = objective.toLowerCase();
   
+  const generateList = (baseList, count) => {
+    const list = [...baseList];
+    while (list.length < count) {
+      const idx = list.length % baseList.length;
+      const variation = list.length + 1;
+      let text = baseList[idx];
+      if (text.includes("!")) {
+        text = text.replace("!", ` (Variant ${variation})!`);
+      } else if (text.endsWith("?")) {
+        text = text.substring(0, text.length - 1) + ` (Option ${variation})?`;
+      } else {
+        text = `${text} [Option ${variation}]`;
+      }
+      list.push(text);
+    }
+    return list.slice(0, count);
+  };
+
+  const dqSubjects = [
+    "🍦 Free Blizzard Alert: We miss you, {{ user.first_name | default: 'friend' }}!",
+    "{% if user.favorite_flavor %}Your favorite {{ user.favorite_flavor }} Blizzard is waiting!{% else %}Craving something sweet? Free Blizzard inside!{% endif %}",
+    "Chill out with a FREE small Blizzard, {{ user.first_name | default: 'there' }}!",
+    "It's DQ Time! Claim your free Blizzard before it melts ⏰",
+    "Treat yourself: A Free Blizzard coupon is waiting in your app 🍧",
+    "Did someone say FREE Ice Cream? {% if user.favorite_flavor %}Your {{ user.favorite_flavor }} is calling!{% else %}Pick your favorite flavor!{% endif %}",
+    "We miss you... and so does your freezer. Get a free small Blizzard inside!",
+    "🍦 Beat the heat: Grab your FREE DQ Blizzard today!",
+    "{% if user.membership_tier == 'Gold' %}⭐ VIP Special: Free Blizzard + Double Points!{% else %}Come back and unlock your next reward!{% endif %}",
+    "Your next treat is on the house, {{ user.first_name | default: 'customer' }}."
+  ];
+
+  const dqPushes = [
+    "Hey {{ user.first_name | default: 'there' }}, it's been 30 days! Come back and get a FREE Blizzard of your choice.",
+    "🍦 Sweet deal: Get a FREE Blizzard on us! Check your email for details.",
+    "Craving {{ user.favorite_flavor | default: 'something sweet' }}? A free Blizzard is waiting in your app!",
+    "Open for a free DQ Blizzard coupon. Valid for 14 days!",
+    "Hey, we miss you! Pop into DQ today for a free sweet treat.",
+    "Your favorite flavors are waiting. Get a free small Blizzard on your next visit.",
+    "Beat the heat! Tap to claim your free small Blizzard coupon right now.",
+    "{% if user.is_vip %}Crown jewel: Your VIP Free Blizzard is ready to redeem!{% else %}Tap to see your exclusive return coupon.{% endif %}",
+    "Dairy Queen: It has been 30 days. Let's make it 0! Your free Blizzard is ready.",
+    "1 free Blizzard. 100% pure happiness. Tap to redeem!"
+  ];
+
   // Custom mock data for Dairy Queen / Blizzard
   if (lowercaseObj.includes('dairy queen') || lowercaseObj.includes('blizzard') || lowercaseObj.includes('dq')) {
+    const subjectLines = generateList(dqSubjects, variantsCount);
+    const pushNotifications = generateList(dqPushes, variantsCount);
     return {
-      subjectLineA: "🍦 Free Blizzard Alert: We miss you, {{ user.first_name | default: 'friend' }}!",
-      subjectLineB: "{% if user.favorite_flavor %}Your favorite {{ user.favorite_flavor }} Blizzard is waiting!{% else %}Craving something sweet? Free Blizzard inside!{% endif %}",
-      pushNotificationA: "Hey {{ user.first_name | default: 'there' }}, it's been 30 days! Come back and get a FREE Blizzard of your choice.",
-      pushNotificationB: "🍦 Sweet deal: Get a FREE Blizzard on us! Check your email for details.",
+      subjectLines,
+      pushNotifications,
+      subjectLineA: subjectLines[0] || '',
+      subjectLineB: subjectLines[1] || '',
+      pushNotificationA: pushNotifications[0] || '',
+      pushNotificationB: pushNotifications[1] || '',
       emailTemplateHtml: `<!DOCTYPE html>
 <html>
 <head>
@@ -240,12 +303,43 @@ function getMockCampaign(objective, voice, variables) {
     };
   }
 
+  const generalSubjects = [
+    "🎯 Exclusive Offer for {{ user.first_name | default: 'our VIPs' }}!",
+    "{% if user.membership_tier == 'Gold' %}💎 VIP Exclusive: Premium Rewards Inside{% else %}Hey {{ user.first_name | default: 'there' }}, see what's new!{% endif %}",
+    "Special account update: Tap to view your rewards, {{ user.first_name | default: 'member' }}.",
+    "Don't leave your rewards behind! Points balance: {{ user.points_balance | default: '0' }}",
+    "{% if user.points_needed <= 150 %}⭐ Almost Gold! You're only {{ user.points_needed }} points away!{% else %}Unlock new perks in your loyalty dashboard!{% endif %}",
+    "We have an exclusive offer tailored just for you 🎁",
+    "New rewards are waiting in your SmartCanvas account!",
+    "Hey {{ user.first_name | default: 'there' }}, check out your personalized loyalty dashboard.",
+    "Earn double points on all orders this week ⚡",
+    "Are you ready for your next tier upgrade?"
+  ];
+
+  const generalPushes = [
+    "Hi {{ user.first_name | default: 'there' }}! We have a new offer tailored just for you. Open to reveal.",
+    "🚨 Don't miss out on your member benefits! Check out your rewards today.",
+    "You have {{ user.points_balance | default: '0' }} points waiting. Use them before they expire!",
+    "Only {{ user.points_needed | default: '100' }} points needed to rank up. Tap to find out how.",
+    "Double points are live! Tap to view eligible items and start earning.",
+    "Hey {{ user.first_name | default: 'there' }}, we've updated your member perks list.",
+    "Exclusive discount: Get up to 20% off your favorite items this weekend.",
+    "Check out your personalized rewards and active coupon codes.",
+    "Unlock VIP treatment: View your custom loyalty recommendations now.",
+    "A special treat is waiting in your inbox. Tap to view details!"
+  ];
+
+  const subjectLines = generateList(generalSubjects, variantsCount);
+  const pushNotifications = generateList(generalPushes, variantsCount);
+
   // General fallback mock data
   return {
-    subjectLineA: "🎯 Exclusive Offer for {{ user.first_name | default: 'our VIPs' }}!",
-    subjectLineB: "{% if user.membership_tier == 'Gold' %}💎 VIP Exclusive: Premium Rewards Inside{% else %}Hey {{ user.first_name | default: 'there' }}, see what's new!{% endif %}",
-    pushNotificationA: "Hi {{ user.first_name | default: 'there' }}! We have a new offer tailored just for you. Open to reveal.",
-    pushNotificationB: "🚨 Don't miss out on your member benefits! Check out your rewards today.",
+    subjectLines,
+    pushNotifications,
+    subjectLineA: subjectLines[0] || '',
+    subjectLineB: subjectLines[1] || '',
+    pushNotificationA: pushNotifications[0] || '',
+    pushNotificationB: pushNotifications[1] || '',
     emailTemplateHtml: `<!DOCTYPE html>
 <html>
 <head>

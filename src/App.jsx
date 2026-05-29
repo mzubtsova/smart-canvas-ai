@@ -12,12 +12,23 @@ export default function App() {
   
   // Shared campaign data to pass between Copilot and Liquid Sandbox
   const [campaignData, setCampaignData] = useState({
+    subjectLines: [],
+    pushNotifications: [],
+    emailTemplateHtml: '',
     subjectLineA: '',
     subjectLineB: '',
     pushNotificationA: '',
-    pushNotificationB: '',
-    emailTemplateHtml: ''
+    pushNotificationB: ''
   });
+
+  // Shared variables list state
+  const [variablesList, setVariablesList] = useState([
+    { id: 'user.first_name', label: 'First Name' },
+    { id: 'user.membership_tier', label: 'Membership Tier' },
+    { id: 'user.points_balance', label: 'Points Balance' },
+    { id: 'user.favorite_flavor', label: 'Favorite Flavor' },
+    { id: 'user.points_needed', label: 'Points Needed' }
+  ]);
 
   // Load API Key from LocalStorage on mount
   useEffect(() => {
@@ -39,6 +50,8 @@ export default function App() {
             apiKey={apiKey}
             campaignData={campaignData}
             setCampaignData={setCampaignData}
+            variablesList={variablesList}
+            setVariablesList={setVariablesList}
             triggerToast={triggerToast}
             setActiveTab={setActiveTab}
           />
@@ -48,6 +61,7 @@ export default function App() {
           <LiquidSandbox
             campaignData={campaignData}
             setCampaignData={setCampaignData}
+            variablesList={variablesList}
             triggerToast={triggerToast}
           />
         );
@@ -67,7 +81,17 @@ export default function App() {
           />
         );
       default:
-        return <CampaignCopilot apiKey={apiKey} setCampaignData={setCampaignData} triggerToast={triggerToast} setActiveTab={setActiveTab} />;
+        return (
+          <CampaignCopilot
+            apiKey={apiKey}
+            campaignData={campaignData}
+            setCampaignData={setCampaignData}
+            variablesList={variablesList}
+            setVariablesList={setVariablesList}
+            triggerToast={triggerToast}
+            setActiveTab={setActiveTab}
+          />
+        );
     }
   };
 
