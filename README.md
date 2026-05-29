@@ -42,6 +42,69 @@ As a Campaign Manager, executing lifecycle campaigns involves key pain points:
 
 ---
 
+## 📐 System Architecture & Data Flow
+
+```mermaid
+graph TD
+    %% Styling
+    classDef react fill:#111827,stroke:#06b6d4,stroke-width:2px,color:#fff;
+    classDef service fill:#111827,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef external fill:#1e1b4b,stroke:#a855f7,stroke-width:2px,color:#fff;
+    classDef storage fill:#111827,stroke:#10b981,stroke-width:2px,color:#fff;
+
+    %% Components
+    App["App.jsx (Shared State Context)"]:::react
+    Copilot["CampaignCopilot.jsx (AI Copy Creator)"]:::react
+    Sandbox["LiquidSandbox.jsx (Template Sandbox)"]:::react
+    ABTester["ABTester.jsx (A/B Persona Tester)"]:::react
+    
+    %% Utilities/Services
+    GeminiClient["services/gemini.js (Gemini API Wrapper)"]:::service
+    Parser["utils/liquidParser.js (Custom Liquid Engine)"]:::service
+    BrazeClient["services/braze.js (Braze Exporter)"]:::service
+    LocalStorage["Browser LocalStorage (API Credentials)"]:::storage
+
+    %% External APIs
+    GeminiAPI["Gemini API (gemini-3.5-flash)"]:::external
+    BrazeAPI["Braze REST API Templates Endpoint"]:::external
+
+    %% Relations & Flows
+    LocalStorage -->|API Keys & Endpoints| App
+    App -->|Shared campaignData & variablesList| Copilot
+    App -->|Shared campaignData & variablesList| Sandbox
+    App -->|Shared campaignData| ABTester
+
+    %% Copilot Flow
+    Copilot -->|1. Objective, Voice, Variables, Variant Count| GeminiClient
+    GeminiClient -->|2. Structured JSON Request| GeminiAPI
+    GeminiAPI -->|3. Subject/Push Arrays & HTML Template| GeminiClient
+    GeminiClient -->|4. Post-Processed Data & Fallbacks| Copilot
+    Copilot -->|5. Update State| App
+
+    %% Sandbox Flow
+    Sandbox -->|1. Code Template + Mock JSON Context| Parser
+    Parser -->|2. AST-less Parsing & Logic Evaluation| Sandbox
+    Sandbox -->|3. Live iframe Rendering| LivePreview["iframe Preview Frame"]:::react
+    Sandbox -->|4. Trigger Braze Export| BrazeClient
+    BrazeClient -->|5. HTTP Template Upload| BrazeAPI
+
+    %% AB Tester Flow
+    ABTester -->|1. Compare Selected Copy Options| GeminiClient
+    GeminiClient -->|2. Dynamic Prompt Setup| GeminiAPI
+    GeminiAPI -->|3. Persona Scores & Critiques| GeminiClient
+    GeminiClient -->|4. Display Gauges & Reviews| ABTester
+```
+
+### Component Breakdown
+*   **App.jsx**: Houses single-source-of-truth states (`campaignData` and `variablesList`) shared across views.
+*   **CampaignCopilot.jsx**: UI to define custom Liquid tags (enforcing naming rules) and request up to 50 copy variants. Features tag toolbars to insert elements at the cursor.
+*   **LiquidSandbox.jsx**: Syncs custom variables automatically into mock JSON profiles and triggers client-side AST-less Liquid compilation.
+*   **ABTester.jsx**: Compares any combination of generated variants inside the audience simulation.
+*   **services/gemini.js**: Interfaces client-side with Gemini API using JSON Schema outputs and exponential backoff retry logic. Handles mock generation for keyless operation.
+*   **utils/liquidParser.js**: Client-side regex template compiler resolving variable filters (`| default: 'val'`) and conditional tags (`{% if %}`).
+
+---
+
 ## 💻 Tech Stack
 
 * **Core Framework**: React (Vite-powered Single Page Application)
