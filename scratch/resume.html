@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Marina Zubtsova - Resume</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #1e293b;
+      background-color: #ffffff;
+      line-height: 1.42;
+      font-size: 10.2px;
+      -webkit-print-color-adjust: exact;
+    }
+    
+    .resume-container {
+      display: flex;
+      height: 279mm; /* Standard Letter height to prevent overflow */
+      width: 215mm; /* Standard Letter width */
+      margin: 0 auto;
+      background-color: #ffffff;
+      overflow: hidden;
+    }
+    
+    /* Left Column (Sidebar) */
+    .sidebar {
+      width: 30%;
+      background-color: #f8fafc;
+      border-right: 1px solid #e2e8f0;
+      padding: 40px 18px 25px 18px; /* Extra top padding */
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    
+    /* Right Column (Main Content) */
+    .main-content {
+      width: 70%;
+      padding: 40px 25px 25px 25px; /* Extra top padding */
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .header-box {
+      border: 1.5px solid #1e293b;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    
+    .header-box h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #0f172a;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    
+    .header-box h2 {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #475569;
+      text-transform: uppercase;
+    }
+    
+    h3.section-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.75px;
+      color: #0f172a;
+      text-transform: uppercase;
+      border-bottom: 1.5px solid #1e293b;
+      padding-bottom: 2px;
+      margin-bottom: 6px;
+    }
+    
+    .sidebar-section h3 {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.75px;
+      color: #0f172a;
+      text-transform: uppercase;
+      border-bottom: 1.5px solid #cbd5e1;
+      padding-bottom: 2px;
+      margin-bottom: 6px;
+    }
+    
+    .contact-item {
+      margin-bottom: 6px;
+    }
+    
+    .contact-label {
+      font-weight: 700;
+      font-size: 8px;
+      color: #475569;
+      text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+    
+    .contact-value {
+      font-size: 10.5px;
+      color: #0f172a;
+    }
+    
+    .contact-value a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .skill-group {
+      margin-bottom: 6px;
+    }
+    
+    .skill-group-title {
+      font-weight: 600;
+      font-size: 9.5px;
+      color: #475569;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    
+    .skill-list {
+      font-size: 10px;
+      color: #334155;
+      line-height: 1.35;
+    }
+    
+    .profile-text {
+      font-size: 10px;
+      color: #334155;
+      text-align: justify;
+    }
+    
+    /* Experience & Projects items */
+    .timeline-item {
+      margin-bottom: 6px;
+    }
+    
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 3px;
+    }
+    
+    .timeline-title {
+      font-weight: 700;
+      font-size: 11px;
+      color: #0f172a;
+    }
+    
+    .timeline-date {
+      font-size: 9.5px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    
+    .timeline-bullets {
+      list-style-type: square;
+      margin-left: 12px;
+      color: #334155;
+    }
+    
+    .timeline-bullets li {
+      margin-bottom: 3px;
+      padding-left: 1px;
+      text-align: justify;
+    }
+    
+    .project-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .project-item {
+      margin-bottom: 0px;
+    }
+    
+    .project-title {
+      font-weight: 700;
+      font-size: 10.5px;
+      color: #0f172a;
+    }
+    
+    .project-title a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    
+    .project-desc {
+      color: #334155;
+      font-size: 9.5px;
+      margin-top: 1px;
+    }
+    
+    .edu-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    
+    .education-item {
+      margin-bottom: 0px;
+    }
+    
+    .edu-title {
+      font-weight: 700;
+      font-size: 10.5px;
+      color: #0f172a;
+    }
+    
+    .edu-school {
+      font-size: 10px;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1px;
+    }
+    
+    .cert-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .certificate-item {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .cert-title {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    
+    .cert-authority {
+      color: #64748b;
+      font-size: 9.5px;
+    }
+    
+    @media print {
+      html, body {
+        height: 100%;
+        overflow: hidden;
+      }
+      .resume-container {
+        box-shadow: none;
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+      }
+      @page {
+        size: letter;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="resume-container">
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+      
+      <div class="sidebar-section">
+        <h3>Contact</h3>
+        
+        <div class="contact-item">
+          <div class="contact-label">Address</div>
+          <div class="contact-value">Austin, TX</div>
+        </div>
+        
+        <div class="contact-item">
+          <div class="contact-label">Phone</div>
+          <div class="contact-value">737-341-2574</div>
+        </div>
+        
+        <div class="contact-item" style="margin-top: 12px; margin-bottom: 4px;">
+          <div class="contact-value"><a href="mailto:marinaz.code@gmail.com">Email</a></div>
+        </div>
+        
+        <div class="contact-item" style="margin-bottom: 4px;">
+          <div class="contact-value"><a href="https://www.linkedin.com/in/marina-zubtsova-98956a205/" target="_blank">LinkedIn</a></div>
+        </div>
+        
+        <div class="contact-item">
+          <div class="contact-value"><a href="https://github.com/mzubtsova" target="_blank">GitHub</a></div>
+        </div>
+      </div>
+      
+      <div class="sidebar-section">
+        <h3>Skills</h3>
+        
+        <div class="skill-group">
+          <div class="skill-group-title">Marketing Tech</div>
+          <div class="skill-list">Braze, Punchh, Branch, Movable Ink</div>
+        </div>
+        
+        <div class="skill-group">
+          <div class="skill-group-title">Development</div>
+          <div class="skill-list">HTML, CSS, JavaScript, GitHub</div>
+        </div>
+        
+        <div class="skill-group">
+          <div class="skill-group-title">Scripting & Logic</div>
+          <div class="skill-list">Liquid Logic, dynamic variables, conditional checks</div>
+        </div>
+        
+        <div class="skill-group">
+          <div class="skill-group-title">AI & Automation</div>
+          <div class="skill-list">Gemini API, Prompt Engineering, QA Automation, AI Persona Simulation</div>
+        </div>
+        
+        <div class="skill-group">
+          <div class="skill-group-title">Methodologies</div>
+          <div class="skill-list">A/B Testing, User Journey Design, Deliverability, QA Automation</div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      
+      <div class="header-box">
+        <h1>Marina Zubtsova</h1>
+        <h2>Campaign Manager</h2>
+      </div>
+      
+      <div class="content-section">
+        <h3 class="section-title">Profile</h3>
+        <p class="profile-text">
+          Technical Campaign Manager with 2+ years of experience executing high-impact lifecycle and promotional campaigns using Braze. Expert in trigger-based journeys, segmentation, and advanced personalization using Liquid, HTML, and CSS. Specializes in building generative AI developer utilities to automate campaign workflows, stress-test dynamic copy, and run pre-deployment QA audits.
+        </p>
+      </div>
+      
+      <div class="content-section">
+        <h3 class="section-title">Employment History</h3>
+        
+        <div class="timeline-item">
+          <div class="timeline-header">
+            <span class="timeline-title">Campaign Manager, Publicis</span>
+            <span class="timeline-date">May 2023 — Oct 2025</span>
+          </div>
+          <ul class="timeline-bullets">
+            <li>Executed multi-channel lifecycle campaigns for Dairy Queen using Braze, increasing unique open rates by 30% within 12 months.</li>
+            <li>Architected and maintained trigger-based customer journeys (Birthday, Onboarding, and Win-back flows) within Braze Canvas.</li>
+            <li>Coded responsive, email-compliant templates using HTML, CSS, and complex Liquid personalization logic, driving a 5% MoM increase in subscriptions and opt-ins.</li>
+            <li>Built and deployed custom React developer tools integrated with the Google Gemini API to run automated copy sync audits and personalization stress-tests, reducing template QA cycle times.</li>
+            <li>Deployed multi-channel campaigns through partner integrations with Branch and Movable Ink, enhancing dynamic personalization.</li>
+            <li>Optimized engagement metrics through A/B testing, behavioral targeting, and segmentation, increasing CTR by 10%.</li>
+            <li>Coordinated deliverables for 15+ campaign launches per month across creative, engineering, client-side QA, and account teams.</li>
+          </ul>
+        </div>
+        
+        <div class="timeline-item" style="margin-top: 6px;">
+          <div class="timeline-header">
+            <span class="timeline-title">IT Recruiter, Zenith Systems Solutions</span>
+            <span class="timeline-date">May 2021 — Oct 2021</span>
+          </div>
+          <ul class="timeline-bullets">
+            <li>Sourced, screened, and qualified technical and IT engineering candidates, improving candidate pipeline efficiency.</li>
+            <li>Conducted initial interviews to evaluate technical skills (frontend, backend, QA) and cultural alignment with client teams.</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="content-section">
+        <h3 class="section-title">Key Projects</h3>
+        
+        <div class="project-grid">
+          <div class="project-item">
+            <div class="project-title"><a href="https://omni-qa-braze.vercel.app/" target="_blank">OmniQA for Braze</a> (React, Vite, Gemini API)</div>
+            <div class="project-desc">A campaign QA dashboard featuring a unified diagnostics log and Monaco HTML editor to validate Figma mockups against Braze code. Integrates real-time SMS/Push mobile device previews with live user personalization overrides, character/emoji segment billing calculators (GSM-7/UCS-2), and automated WCAG color contrast checks.</div>
+          </div>
+
+          <div class="project-item">
+            <div class="project-title"><a href="https://smart-canvas-ai-six.vercel.app/" target="_blank">SmartCanvas AI</a> (React, Gemini API)</div>
+            <div class="project-desc">An interactive campaign builder sandbox with client-side Liquid parsing, dynamic personalization variables, and generation of up to 50 copy variants. Features AI target-audience simulation using dynamic buyer personas that critique and score subject lines in real time.</div>
+          </div>
+
+          <div class="project-item">
+            <div class="project-title"><a href="https://loyalty-boost-ai.vercel.app/" target="_blank">LoyaltyBoost AI</a> (React, Gemini API)</div>
+            <div class="project-desc">A gamified reward challenge manager featuring a smartphone pass visualizer with dynamic color shifts based on user tier. Integrated a behavioral psychology advisor using Gemini to score loyalty metrics (loss aversion, list fatigue).</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="content-section">
+          <h3 class="section-title">Education</h3>
+          <div class="edu-grid">
+            <div class="education-item">
+              <div class="edu-title">Web Development Immersive</div>
+              <div class="edu-school">
+                <span>Juno College of Technology</span>
+                <span class="timeline-date">2022</span>
+              </div>
+            </div>
+            
+            <div class="education-item">
+              <div class="edu-title">Bachelor of Personnel Management</div>
+              <div class="edu-school">
+                <span>MADI State Technical University</span>
+                <span class="timeline-date">2018</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="content-section">
+          <h3 class="section-title">Certificates</h3>
+          <div class="cert-grid">
+            <div class="certificate-item">
+              <span class="cert-title">Braze Certified Marketer</span>
+              <span class="cert-authority">Braze — 2023</span>
+            </div>
+            
+            <div class="certificate-item">
+              <span class="cert-title">Loyalty Marketing Certification</span>
+              <span class="cert-authority">PAR Punchh — 2024</span>
+            </div>
+            
+            <div class="certificate-item">
+              <span class="cert-title">Punchh Platform Certification</span>
+              <span class="cert-authority">PAR Punchh — 2024</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+</body>
+</html>
