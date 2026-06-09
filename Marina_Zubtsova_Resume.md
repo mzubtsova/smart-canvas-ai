@@ -41,7 +41,7 @@ Technical Campaign Manager with 2+ years of experience executing high-impact lif
 **[OmniQA for Braze](https://omni-qa-braze.vercel.app/)** (React, Vite, Gemini API)
 *   A campaign QA dashboard featuring a unified diagnostics log and Monaco HTML editor to validate Figma mockups against Braze code.
 *   Integrates multi-channel previews (Email, Push, SMS, IAM), an interactive Liquid variable form editor, multi-client inbox truncation QA previews (Gmail, Apple Mail, Outlook), translation uploads, and a settings connection diagnostics terminal.
-*   Built a standalone A/B Performance Engine evaluating CTA button copies/URLs with bi-directional syncing to update workspace template HTML code dynamically.
+*   Built a standalone A/B Performance Engine evaluating CTA button copies/URLs with bi-directional syncing, a one-click **Auto-Fix HTML engine** resolving WCAG contrast/link issues, and a **Braze Campaign Catalog** with workspace sync and external dashboard links.
 
 **[SmartCanvas AI](https://smart-canvas-ai-six.vercel.app/)** (React, Gemini API)
 *   An interactive campaign builder sandbox with client-side Liquid parsing, dynamic personalization variables, and generation of up to 50 copy variants.
