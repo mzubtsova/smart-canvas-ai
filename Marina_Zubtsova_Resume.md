@@ -1,5 +1,5 @@
 # MARINA ZUBTSOVA
-** Austin, TX | 737-341-2574 | [Email](mailto:marinaz.code@gmail.com) | [LinkedIn](https://www.linkedin.com/in/marina-zubtsova-98956a205/) | [GitHub](https://github.com/mzubtsova) **
+** Austin, TX | 737-341-2574 | [Email](mailto:marinaz.code@gmail.com) | [LinkedIn](https://www.linkedin.com/in/marina-zubtsova-98956a205/) | [GitHub](https://github.com/mzubtsova) | [Portfolio](https://marina-zubtsova-portfolio.vercel.app/) **
 
 ---
 
@@ -39,17 +39,17 @@ Technical Campaign Manager with 2+ years of experience executing high-impact lif
 ### KEY PROJECTS (Live Applications)
 
 **[OmniQA for Braze](https://omni-qa-braze.vercel.app/)** (React, Vite, Gemini API)
-*   A campaign QA dashboard featuring a unified diagnostics log and Monaco HTML editor to validate Figma mockups against Braze code.
-*   Integrates multi-channel previews (Email, Push, SMS, IAM), an interactive Liquid variable form editor, multi-client inbox truncation QA previews (Gmail, Apple Mail, Outlook), translation uploads, and a settings connection diagnostics terminal.
-*   Built a standalone A/B Performance Engine evaluating CTA button copies/URLs with bi-directional syncing, a one-click **Auto-Fix HTML engine** resolving WCAG contrast/link issues, and a **Braze Campaign Catalog** with workspace sync and external dashboard links.
+*   A campaign QA dashboard featuring a unified diagnostics log, Monaco HTML editor, and one-click **Auto-Fix HTML engine** resolving WCAG contrast/link issues.
+*   Integrates multi-channel previews (Email, Push, SMS, IAM), an interactive Liquid variable form editor, and a campaign catalog matching imported campaigns via parsed Braze Campaign/Canvas IDs or Links.
+*   Supports dynamic pre-approval and readiness checklist customization and generates print-ready PDF QA audit reports.
+
+**[OmniPulse](https://omni-pulse-marina-zubtsova-s-projects.vercel.app/)** (React, Vite, Gemini API)
+*   A post-send campaign analytics dashboard for visualizing click hotspots, auditing dynamic Liquid logic branches, and calculating A/B test statistical lift.
+*   Integrates deliverability risk checks and an AI post-mortem report generator powered by the Gemini API to turn performance metrics into actionable next steps.
 
 **[SmartCanvas AI](https://smart-canvas-ai-six.vercel.app/)** (React, Gemini API)
-*   An interactive campaign builder sandbox with client-side Liquid parsing, dynamic personalization variables, and generation of up to 50 copy variants.
+*   An interactive campaign builder sandbox with client-side Liquid parsing, dynamic personalization variables, and copy variant generation.
 *   Features AI target-audience simulation using dynamic buyer personas that critique and score subject lines in real time.
-
-**[LoyaltyBoost AI](https://loyalty-boost-ai.vercel.app/)** (React, Gemini API)
-*   A gamified reward challenge manager featuring a smartphone pass visualizer with dynamic color shifts based on user tier.
-*   Integrated a behavioral psychology advisor using Gemini to score loyalty metrics (loss aversion, list fatigue).
 
 ---
 
