@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { generateCampaign } from '../services/gemini';
-import { Sparkles, Copy, ArrowRight, CheckCircle, Mail, MessageSquare, Code, Loader2 } from 'lucide-react';
+import { Sparkles, Copy, ArrowRight, Mail, MessageSquare, Code, Loader2, Smartphone, PanelTop, CreditCard } from 'lucide-react';
 
 export default function CampaignCopilot({ apiKey, campaignData, setCampaignData, variablesList, setVariablesList, triggerToast, setActiveTab }) {
   const [objective, setObjective] = useState(
-    "Win-back campaign for Dairy Queen customers who haven't ordered in 30 days. Highlight a free small Blizzard coupon and urge them to download the app."
+    "Win-back campaign for loyalty members who have not purchased in 30 days. Highlight a personalized member offer, points balance, and a clear app CTA."
   );
   const [voice, setVoice] = useState('Playful');
   const [selectedVariables, setSelectedVariables] = useState([
     'user.first_name',
-    'user.favorite_flavor',
+    'user.favorite_category',
     'user.membership_tier'
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -120,7 +120,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.9fr', gap: '2rem' }}>
+      <div className="copilot-grid">
         
         {/* Left Panel - Inputs Form */}
         <div className="panel" style={{ height: 'fit-content' }}>
@@ -155,7 +155,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                   style={{ width: '100%' }}
                   data-tip="Tone steers the AI copy and the fallback demo generator."
                 >
-                  <option value="Playful">🍦 Playful & Fun (e.g. DQ)</option>
+                  <option value="Playful">Playful & Fun</option>
                   <option value="Bold">⚡ Bold & Urgent</option>
                   <option value="Professional">💼 Professional</option>
                   <option value="Warm">❤️ Warm & Empathetic</option>
@@ -291,6 +291,27 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                   <MessageSquare size={14} /> Push Notifications
                 </button>
                 <button
+                  className={`sub-tab ${activeSubTab === 'sms' ? 'active' : ''}`}
+                  onClick={() => setActiveSubTab('sms')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Smartphone size={14} /> SMS
+                </button>
+                <button
+                  className={`sub-tab ${activeSubTab === 'iam' ? 'active' : ''}`}
+                  onClick={() => setActiveSubTab('iam')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <PanelTop size={14} /> IAM
+                </button>
+                <button
+                  className={`sub-tab ${activeSubTab === 'cards' ? 'active' : ''}`}
+                  onClick={() => setActiveSubTab('cards')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <CreditCard size={14} /> Cards
+                </button>
+                <button
                   className={`sub-tab ${activeSubTab === 'html' ? 'active' : ''}`}
                   onClick={() => setActiveSubTab('html')}
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -317,7 +338,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                               <Copy size={14} /> <span style={{ fontSize: '0.7rem' }}>Copy</span>
                             </button>
                           </div>
-                          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: '#fff', margin: 0 }}>{subject}</p>
+                          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0 }}>{subject}</p>
                         </div>
                       );
                     })}
@@ -340,10 +361,67 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                               <Copy size={14} /> <span style={{ fontSize: '0.7rem' }}>Copy</span>
                             </button>
                           </div>
-                          <p style={{ fontSize: '0.9rem', color: '#fff', margin: 0 }}>{push}</p>
+                          <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0 }}>{push}</p>
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {activeSubTab === 'sms' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                    {(campaignData.smsMessages || []).map((sms, idx) => (
+                      <div key={idx} className="copy-card">
+                        <div className="copy-card-top">
+                          <span>SMS #{idx + 1}</span>
+                          <button onClick={() => handleCopy(sms, `SMS Variant #${idx + 1}`)}>
+                            <Copy size={14} /> <span>Copy</span>
+                          </button>
+                        </div>
+                        <p>{sms}</p>
+                      </div>
+                    ))}
+                    {(!campaignData.smsMessages || campaignData.smsMessages.length === 0) && (
+                      <p className="empty-note">Generate a campaign to create SMS variants.</p>
+                    )}
+                  </div>
+                )}
+
+                {activeSubTab === 'iam' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                    {(campaignData.inAppMessages || []).map((iam, idx) => (
+                      <div key={idx} className="copy-card">
+                        <div className="copy-card-top">
+                          <span>IAM #{idx + 1}</span>
+                          <button onClick={() => handleCopy(iam, `In-App Message #${idx + 1}`)}>
+                            <Copy size={14} /> <span>Copy</span>
+                          </button>
+                        </div>
+                        <p>{iam}</p>
+                      </div>
+                    ))}
+                    {(!campaignData.inAppMessages || campaignData.inAppMessages.length === 0) && (
+                      <p className="empty-note">Generate a campaign to create in-app message variants.</p>
+                    )}
+                  </div>
+                )}
+
+                {activeSubTab === 'cards' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                    {(campaignData.contentCards || []).map((card, idx) => (
+                      <div key={idx} className="copy-card">
+                        <div className="copy-card-top">
+                          <span>Content Card #{idx + 1}</span>
+                          <button onClick={() => handleCopy(card, `Content Card #${idx + 1}`)}>
+                            <Copy size={14} /> <span>Copy</span>
+                          </button>
+                        </div>
+                        <p>{card}</p>
+                      </div>
+                    ))}
+                    {(!campaignData.contentCards || campaignData.contentCards.length === 0) && (
+                      <p className="empty-note">Generate a campaign to create content card variants.</p>
+                    )}
                   </div>
                 )}
 

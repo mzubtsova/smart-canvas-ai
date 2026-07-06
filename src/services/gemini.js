@@ -116,11 +116,14 @@ export async function generateCampaign({ objective, voice, variables, variantsCo
   }
 
   const systemInstruction = `You are an expert lifecycle email marketer and Braze HTML developer.
-Generate exactly ${variantsCount} subject line variants, exactly ${variantsCount} push notification variants, and a modern, responsive HTML email template using Liquid syntax for personalization.
+Generate exactly ${variantsCount} variants for each requested lifecycle channel and a modern, responsive HTML email template using Liquid syntax for personalization.
 Return your output ONLY as a JSON object matching this structure:
 {
   "subjectLines": ["Subject Variant 1", "Subject Variant 2", ...],
   "pushNotifications": ["Push Variant 1", "Push Variant 2", ...],
+  "smsMessages": ["SMS Variant 1", "SMS Variant 2", ...],
+  "inAppMessages": ["IAM Variant 1", "IAM Variant 2", ...],
+  "contentCards": ["Content Card Variant 1", "Content Card Variant 2", ...],
   "emailTemplateHtml": "..."
 }
 Guidelines for the emailTemplateHtml:
@@ -148,6 +151,9 @@ Please draft a high-quality campaign following the JSON schema structure exactly
     if (!result.pushNotifications) {
       result.pushNotifications = [result.pushNotificationA, result.pushNotificationB].filter(Boolean);
     }
+    result.smsMessages = result.smsMessages || [];
+    result.inAppMessages = result.inAppMessages || [];
+    result.contentCards = result.contentCards || [];
     // Backward compatibility mappings
     result.subjectLineA = result.subjectLines[0] || '';
     result.subjectLineB = result.subjectLines[1] || '';
@@ -200,8 +206,6 @@ Review both variants and return the critiques in the JSON schema format.`;
 // ==========================================
 
 function getMockCampaign(objective, voice, variables, variantsCount = 2) {
-  const lowercaseObj = objective.toLowerCase();
-  
   const generateList = (baseList, count) => {
     const list = [...baseList];
     while (list.length < count) {
@@ -220,122 +224,69 @@ function getMockCampaign(objective, voice, variables, variantsCount = 2) {
     return list.slice(0, count);
   };
 
-  const dqSubjects = [
-    "🍦 Free Blizzard Alert: We miss you, {{ user.first_name | default: 'friend' }}!",
-    "{% if user.favorite_flavor %}Your favorite {{ user.favorite_flavor }} Blizzard is waiting!{% else %}Craving something sweet? Free Blizzard inside!{% endif %}",
-    "Chill out with a FREE small Blizzard, {{ user.first_name | default: 'there' }}!",
-    "It's DQ Time! Claim your free Blizzard before it melts ⏰",
-    "Treat yourself: A Free Blizzard coupon is waiting in your app 🍧",
-    "Did someone say FREE Ice Cream? {% if user.favorite_flavor %}Your {{ user.favorite_flavor }} is calling!{% else %}Pick your favorite flavor!{% endif %}",
-    "We miss you... and so does your freezer. Get a free small Blizzard inside!",
-    "🍦 Beat the heat: Grab your FREE DQ Blizzard today!",
-    "{% if user.membership_tier == 'Gold' %}⭐ VIP Special: Free Blizzard + Double Points!{% else %}Come back and unlock your next reward!{% endif %}",
-    "Your next treat is on the house, {{ user.first_name | default: 'customer' }}."
-  ];
-
-  const dqPushes = [
-    "Hey {{ user.first_name | default: 'there' }}, it's been 30 days! Come back and get a FREE Blizzard of your choice.",
-    "🍦 Sweet deal: Get a FREE Blizzard on us! Check your email for details.",
-    "Craving {{ user.favorite_flavor | default: 'something sweet' }}? A free Blizzard is waiting in your app!",
-    "Open for a free DQ Blizzard coupon. Valid for 14 days!",
-    "Hey, we miss you! Pop into DQ today for a free sweet treat.",
-    "Your favorite flavors are waiting. Get a free small Blizzard on your next visit.",
-    "Beat the heat! Tap to claim your free small Blizzard coupon right now.",
-    "{% if user.is_vip %}Crown jewel: Your VIP Free Blizzard is ready to redeem!{% else %}Tap to see your exclusive return coupon.{% endif %}",
-    "Dairy Queen: It has been 30 days. Let's make it 0! Your free Blizzard is ready.",
-    "1 free Blizzard. 100% pure happiness. Tap to redeem!"
-  ];
-
-  // Custom mock data for Dairy Queen / Blizzard
-  if (lowercaseObj.includes('dairy queen') || lowercaseObj.includes('blizzard') || lowercaseObj.includes('dq')) {
-    const subjectLines = generateList(dqSubjects, variantsCount);
-    const pushNotifications = generateList(dqPushes, variantsCount);
-    return {
-      subjectLines,
-      pushNotifications,
-      subjectLineA: subjectLines[0] || '',
-      subjectLineB: subjectLines[1] || '',
-      pushNotificationA: pushNotifications[0] || '',
-      pushNotificationB: pushNotifications[1] || '',
-      emailTemplateHtml: `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: sans-serif; background-color: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
-    .card { background-color: #1e293b; border-radius: 12px; padding: 30px; max-width: 500px; margin: 0 auto; border: 1px solid #334155; text-align: center; }
-    .logo { font-size: 24px; font-weight: bold; color: #e11d48; margin-bottom: 20px; text-transform: uppercase; }
-    h1 { font-size: 22px; margin-bottom: 15px; color: #f8fafc; }
-    p { color: #94a3b8; line-height: 1.6; margin-bottom: 25px; }
-    .coupon { background-color: rgba(99, 102, 241, 0.1); border: 2px dashed #6366f1; border-radius: 8px; padding: 15px; font-weight: bold; font-size: 18px; color: #818cf8; margin-bottom: 25px; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; }
-    .footer { font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #334155; padding-top: 15px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="logo">🍧 Dairy Queen</div>
-    <h1>Hey {{ user.first_name | default: 'Sweet Tooth' }},</h1>
-    
-    <p>It's been a while since your last visit! To help you cool off, we've loaded a coupon for a <strong>FREE Small Blizzard</strong> directly to your loyalty account.</p>
-    
-    {% if user.favorite_flavor %}
-      <div class="coupon">FREE {{ user.favorite_flavor | uppercase }} BLIZZARD</div>
-      <p>We know you love <strong>{{ user.favorite_flavor }}</strong>, but feel free to choose any flavor you're craving!</p>
-    {% else %}
-      <div class="coupon">FREE SMALL BLIZZARD</div>
-      <p>Whether you're an Oreo Fanatic or a Cookie Dough lover, the choice is yours!</p>
-    {% endif %}
-
-    {% if user.membership_tier == "Gold" %}
-      <p style="color: #fbbf24; font-size: 14px; font-weight: bold;">⭐ Special Gold Member Benefit: We've also added 100 bonus points to your wallet!</p>
-    {% endif %}
-    
-    <a href="#" class="btn">Claim Your Blizzard</a>
-    
-    <div class="footer">
-      This offer is valid for 14 days at participating locations.<br>
-      Point Balance: {{ user.points_balance | default: '0' }} points.
-    </div>
-  </div>
-</body>
-</html>`
-    };
-  }
-
   const generalSubjects = [
-    "🎯 Exclusive Offer for {{ user.first_name | default: 'our VIPs' }}!",
-    "{% if user.membership_tier == 'Gold' %}💎 VIP Exclusive: Premium Rewards Inside{% else %}Hey {{ user.first_name | default: 'there' }}, see what's new!{% endif %}",
-    "Special account update: Tap to view your rewards, {{ user.first_name | default: 'member' }}.",
-    "Don't leave your rewards behind! Points balance: {{ user.points_balance | default: '0' }}",
-    "{% if user.points_needed <= 150 %}⭐ Almost Gold! You're only {{ user.points_needed }} points away!{% else %}Unlock new perks in your loyalty dashboard!{% endif %}",
-    "We have an exclusive offer tailored just for you 🎁",
-    "New rewards are waiting in your SmartCanvas account!",
-    "Hey {{ user.first_name | default: 'there' }}, check out your personalized loyalty dashboard.",
-    "Earn double points on all orders this week ⚡",
-    "Are you ready for your next tier upgrade?"
+    "{{ user.first_name | default: 'You' }}, your member offer is ready",
+    "{% if user.membership_tier == 'Gold' %}Gold access: early perks are open{% else %}New rewards are waiting for you{% endif %}",
+    "Your account benefits were refreshed",
+    "You are {{ user.points_needed | default: '100' }} points from the next reward",
+    "A personalized offer based on {{ user.favorite_category | default: 'your favorites' }}",
+    "Your next loyalty moment starts here",
+    "A smarter way to use your rewards this week",
+    "Members get first access today",
+    "Your points balance: {{ user.points_balance | default: '0' }}",
+    "A quick reminder before this offer closes"
   ];
 
   const generalPushes = [
-    "Hi {{ user.first_name | default: 'there' }}! We have a new offer tailored just for you. Open to reveal.",
-    "🚨 Don't miss out on your member benefits! Check out your rewards today.",
-    "You have {{ user.points_balance | default: '0' }} points waiting. Use them before they expire!",
-    "Only {{ user.points_needed | default: '100' }} points needed to rank up. Tap to find out how.",
-    "Double points are live! Tap to view eligible items and start earning.",
-    "Hey {{ user.first_name | default: 'there' }}, we've updated your member perks list.",
-    "Exclusive discount: Get up to 20% off your favorite items this weekend.",
-    "Check out your personalized rewards and active coupon codes.",
-    "Unlock VIP treatment: View your custom loyalty recommendations now.",
-    "A special treat is waiting in your inbox. Tap to view details!"
+    "Hi {{ user.first_name | default: 'there' }}, your personalized member offer is ready.",
+    "Your rewards were refreshed. Tap to see what changed.",
+    "{{ user.points_balance | default: '0' }} points are available in your account.",
+    "Only {{ user.points_needed | default: '100' }} points to your next reward.",
+    "{% if user.membership_tier == 'Gold' %}Gold perk unlocked: early access is live.{% else %}A new member perk is waiting.{% endif %}",
+    "Tap to view offers matched to {{ user.favorite_category | default: 'your interests' }}.",
+    "Limited-time loyalty bonus is live today.",
+    "Your account has a new recommendation.",
+    "Open to activate this week's member benefit.",
+    "Reminder: your personalized offer is still available."
+  ];
+
+  const generalSms = [
+    "{{ user.first_name | default: 'Hi' }}, your member offer is ready: {{ user.points_balance | default: '0' }} pts available. View in app.",
+    "SmartCanvas: You are {{ user.points_needed | default: '100' }} pts from your next reward. Tap to see eligible actions.",
+    "{% if user.membership_tier == 'Gold' %}Gold member early access is live.{% else %}A member-only offer is ready.{% endif %} Reply STOP to opt out.",
+    "Your personalized rewards were refreshed. Check your app before this offer expires.",
+    "New perk: offers based on {{ user.favorite_category | default: 'your preferences' }} are ready."
+  ];
+
+  const generalIam = [
+    "Welcome back, {{ user.first_name | default: 'there' }}. Your best next offer is ready.",
+    "{% if user.membership_tier == 'Gold' %}Gold benefit unlocked{% else %}Unlock your next member benefit{% endif %}",
+    "You are {{ user.points_needed | default: '100' }} points away from the next reward.",
+    "Recommended for you: {{ user.favorite_category | default: 'member favorites' }}",
+    "Use your points today or save this offer for later."
+  ];
+
+  const generalCards = [
+    "Reward path: {{ user.points_balance | default: '0' }} points earned, {{ user.points_needed | default: '100' }} to go.",
+    "Member spotlight: Offers personalized to {{ user.favorite_category | default: 'your shopping history' }}.",
+    "{% if user.is_vip %}VIP checklist: early access, bonus points, saved offer.{% else %}Starter checklist: activate offer, earn points, unlock next tier.{% endif %}",
+    "Campaign card: tap to view the best next action for your account.",
+    "Lifecycle reminder: your personalized benefit is still open."
   ];
 
   const subjectLines = generateList(generalSubjects, variantsCount);
   const pushNotifications = generateList(generalPushes, variantsCount);
+  const smsMessages = generateList(generalSms, variantsCount);
+  const inAppMessages = generateList(generalIam, variantsCount);
+  const contentCards = generateList(generalCards, variantsCount);
 
   // General fallback mock data
   return {
     subjectLines,
     pushNotifications,
+    smsMessages,
+    inAppMessages,
+    contentCards,
     subjectLineA: subjectLines[0] || '',
     subjectLineB: subjectLines[1] || '',
     pushNotificationA: pushNotifications[0] || '',
@@ -345,33 +296,33 @@ function getMockCampaign(objective, voice, variables, variantsCount = 2) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: sans-serif; background-color: #0b0b0f; margin: 0; padding: 20px; color: #f8fafc; }
-    .card { background-color: #12121a; border-radius: 16px; padding: 30px; max-width: 500px; margin: 0 auto; border: 1px solid rgba(255,255,255,0.06); text-align: center; }
-    .logo { font-size: 20px; font-weight: bold; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 25px; }
-    h1 { font-size: 22px; margin-bottom: 15px; color: #ffffff; }
-    p { color: #94a3b8; line-height: 1.6; margin-bottom: 25px; }
-    .tier-box { padding: 12px; border-radius: 8px; margin-bottom: 25px; font-weight: bold; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
-    .footer { font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 15px; }
+    body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 24px; color: #172026; }
+    .card { background-color: #ffffff; border-radius: 10px; padding: 28px; max-width: 560px; margin: 0 auto; border: 1px solid #d9e2df; }
+    .eyebrow { color: #0f766e; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: bold; }
+    h1 { font-size: 24px; margin: 10px 0 12px; color: #172026; }
+    p { color: #52616b; line-height: 1.6; margin: 0 0 20px; }
+    .tier-box { padding: 14px; border-radius: 8px; margin-bottom: 22px; font-weight: bold; }
+    .btn { display: inline-block; background: #0f766e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; }
+    .footer { font-size: 12px; color: #77838c; margin-top: 28px; border-top: 1px solid #d9e2df; padding-top: 14px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo">SMARTCANVAS CO.</div>
-    <h1>Special Update for {{ user.first_name | default: 'our Member' }}</h1>
+    <div class="eyebrow">Member update</div>
+    <h1>Hi {{ user.first_name | default: 'there' }}, your rewards are ready</h1>
     
-    <p>We are thrilled to share an exclusive update on your account benefits and personal offers.</p>
+    <p>We refreshed your account with benefits matched to your profile and recent activity.</p>
     
     {% if user.membership_tier == "Gold" %}
-      <div class="tier-box" style="background-color: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); color: #fbbf24;">
-        👑 GOLD TIER EXCLUSIVE BENEFIT
+      <div class="tier-box" style="background-color: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;">
+        Gold tier early access is available
       </div>
-      <p>As a Gold Member, you have access to free express shipping and double points on all orders this week!</p>
+      <p>As a Gold member, you can access this offer before it opens to the full audience.</p>
     {% else %}
-      <div class="tier-box" style="background-color: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8;">
-        ⭐ STANDARD TIER BENEFITS
+      <div class="tier-box" style="background-color: #ecfdf5; border: 1px solid #99f6e4; color: #0f766e;">
+        Next reward progress
       </div>
-      <p>Want to unlock Gold Tier? You only need {{ user.points_needed | default: '150' }} more points to upgrade and get free shipping!</p>
+      <p>You only need {{ user.points_needed | default: '100' }} more points to unlock your next member reward.</p>
     {% endif %}
     
     <a href="#" class="btn">View My Rewards</a>
@@ -386,41 +337,7 @@ function getMockCampaign(objective, voice, variables, variantsCount = 2) {
   };
 }
 
-function getMockABTest(objective) {
-  const lowercaseObj = objective.toLowerCase();
-  const isDairyQueen = lowercaseObj.includes('dairy queen') || lowercaseObj.includes('blizzard') || lowercaseObj.includes('dq');
-  
-  if (isDairyQueen) {
-    return {
-      personas: [
-        {
-          name: "Sarah (Busy Parent)",
-          role: "34, mother of two. Has limited time, scans notifications quickly, looks for high-value family treats.",
-          scoreA: 92,
-          scoreB: 68,
-          critiqueA: "Variant A says 'Free Blizzard Alert' right at the front. This caught my attention instantly because my kids love Blizzards and 'Free' is an easy win for a family treat. I will definitely open this email.",
-          critiqueB: "If the email is about a flavor I don't buy, I might skip it. The personalization 'Your favorite favorite_flavor Blizzard' is nice, but Variant A's directness and simplicity ('Free Blizzard Alert') is much more compelling for a busy day."
-        },
-        {
-          name: "Marcus (College Student)",
-          role: "21, budget-conscious student. Highly responsive to free food, uses food apps, browses late at night.",
-          scoreA: 88,
-          scoreB: 94,
-          critiqueA: "Love the free Blizzard offer, but the subject line feels a little generic. 'We miss you' feels like typical marketing guilt. I'd open it, but mainly just because it says 'free'.",
-          critiqueB: "This is awesome. It checks my favorite flavor (which is Chocolate Chip Cookie Dough). Seeing my favorite flavor combined with 'free' is an instant open. If it falls back to 'Free Blizzard inside', it still works, but favorite flavor makes it 10/10."
-        },
-        {
-          name: "Robert (Retired Professional)",
-          role: "62, loyal DQ customer. Values loyalty points, reads his email on a tablet in the morning, dislikes hype.",
-          scoreA: 55,
-          scoreB: 72,
-          critiqueA: "Subject lines starting with emojis like 🍦 feel a bit childish and cluttered to me. I see a lot of spam like this. The word 'Alert' also feels unnecessarily dramatic for ice cream.",
-          critiqueB: "This subject line is much calmer. It directly states my favorite flavor or offers a straightforward 'Free Blizzard inside' message. It reads clean, looks more trustworthy, and is something I'd actually tap on."
-        }
-      ]
-    };
-  }
-
+function getMockABTest() {
   // General fallback critiques
   return {
     personas: [

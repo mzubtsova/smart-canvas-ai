@@ -36,15 +36,15 @@
 }
 
 :root[data-theme="light"] {
-  --bg-primary: #f6f7f2;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #eef2f0;
-  --bg-elevated: #f9faf8;
-  --border-color: rgba(15, 23, 42, 0.11);
+  --bg-primary: #f7f8f5;
+  --bg-secondary: #fffffb;
+  --bg-tertiary: #f0f4ef;
+  --bg-elevated: #f9fbf7;
+  --border-color: rgba(35, 48, 43, 0.13);
   --border-focus: rgba(20, 184, 166, 0.55);
   --text-primary: #172026;
-  --text-secondary: #52616b;
-  --text-muted: #77838c;
+  --text-secondary: #52615b;
+  --text-muted: #7a8680;
   --accent-primary: #0f766e;
   --accent-secondary: #ea580c;
   --accent-tertiary: #2563eb;
@@ -410,6 +410,53 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(16, 185, 129, 0.3);
 }
 
+.copy-card {
+  padding: 1rem;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.copy-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.copy-card-top span:first-child {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  text-transform: uppercase;
+}
+
+.copy-card-top button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.copy-card-top button span {
+  font-size: 0.7rem;
+}
+
+.copy-card p,
+.empty-note {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.empty-note {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Tabs UI (Within views) */
 .tab-container {
   display: flex;
@@ -437,7 +484,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sub-tab.active {
-  color: white;
+  color: var(--text-primary);
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
 }
@@ -457,6 +504,12 @@ h1, h2, h3, h4, h5, h6 {
   flex: 1;
 }
 
+.copilot-grid {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.65fr);
+  gap: 2rem;
+}
+
 /* Editor Panel Custom Styling */
 .editor-container {
   position: relative;
@@ -469,6 +522,10 @@ h1, h2, h3, h4, h5, h6 {
   height: 520px;
 }
 
+:root[data-theme="light"] .editor-container {
+  background-color: #f6f8f4;
+}
+
 .editor-header {
   display: flex;
   justify-content: space-between;
@@ -476,6 +533,10 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.75rem 1rem;
   background-color: #06060a;
   border-bottom: 1px solid var(--border-color);
+}
+
+:root[data-theme="light"] .editor-header {
+  background-color: #e9efea;
 }
 
 .editor-title {
@@ -499,6 +560,10 @@ h1, h2, h3, h4, h5, h6 {
   outline: none;
   resize: none;
   overflow-y: auto;
+}
+
+:root[data-theme="light"] .editor-textarea {
+  color: #1f2a24;
 }
 
 /* Code Preview Card styling */
@@ -730,6 +795,13 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--accent-secondary);
 }
 
+.mission-card-desc {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  margin-top: 0.45rem;
+}
+
 .mission-progress {
   height: 7px;
   margin: 0.7rem 0;
@@ -768,18 +840,124 @@ h1, h2, h3, h4, h5, h6 {
 
 .sandbox-workspace {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(270px, 0.9fr) minmax(320px, 1.15fr);
+  grid-template-columns: minmax(420px, 1.12fr) minmax(340px, 0.88fr);
+  grid-template-areas:
+    "editor preview"
+    "editor context";
   gap: 1.25rem;
   flex: 1;
   min-height: 550px;
   position: relative;
+  align-items: start;
+}
+
+.sandbox-workspace > .editor-container {
+  grid-area: editor;
+  height: min(680px, calc(100vh - 12rem));
+}
+
+.sandbox-workspace > .preview-container {
+  grid-area: preview;
+  height: 330px;
 }
 
 .sandbox-middle {
+  grid-area: context;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  min-height: 520px;
+  min-height: 0;
+}
+
+.sandbox-middle .panel {
+  max-height: none;
+}
+
+.sandbox-middle .editor-container {
+  height: 230px;
+}
+
+.tag-manager {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.tag-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tag-manager-header > span {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tag-add {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tag-add input {
+  width: 170px;
+  min-width: 0;
+  padding: 0.35rem 0.45rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+}
+
+.tag-add button,
+.tag-chip button {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+}
+
+.tag-add button {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tag-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-height: 76px;
+  overflow-y: auto;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.tag-chip button:first-child {
+  padding: 0.25rem 0.5rem;
+  border-right: 0;
+  border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
+  color: var(--accent-primary);
+  font-size: 0.72rem;
+}
+
+.tag-chip button:last-child {
+  width: 26px;
+  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+  color: var(--text-muted);
 }
 
 .qa-strip {
@@ -880,12 +1058,14 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
+  display: none;
   z-index: 2000;
   transition: all var(--transition-fast);
 }
 
 [data-tip]:hover::after,
 [data-tip]:focus-visible::after {
+  display: block;
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -911,6 +1091,14 @@ h1, h2, h3, h4, h5, h6 {
   .split-view-triple,
   .sandbox-workspace {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "editor"
+      "preview"
+      "context";
+  }
+
+  .copilot-grid {
+    grid-template-columns: 1fr;
   }
 
   .sandbox-middle,
@@ -918,6 +1106,12 @@ h1, h2, h3, h4, h5, h6 {
   .preview-container {
     min-height: 420px;
     height: auto;
+  }
+
+  .sandbox-workspace > .editor-container,
+  .sandbox-workspace > .preview-container {
+    height: auto;
+    min-height: 420px;
   }
 }
 

@@ -4,7 +4,7 @@ import { Users, Send, Loader2, Sparkles } from 'lucide-react';
 
 export default function ABTester({ apiKey, campaignData, triggerToast }) {
   const [objective, setObjective] = useState(
-    "Re-engage Dairy Queen customers who haven't ordered in 30 days."
+    "Re-engage loyalty members who have not purchased in 30 days."
   );
   
   const [subjectA, setSubjectA] = useState(campaignData.subjectLineA || '');
@@ -142,7 +142,7 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
                 className="form-input"
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
-                placeholder="E.g., Dairy Queen free Blizzard, clothing brand fall discount..."
+                placeholder="E.g., loyalty win-back, new tier benefit, seasonal retail offer..."
                 required
               />
             </div>

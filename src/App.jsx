@@ -15,6 +15,9 @@ export default function App() {
   const [campaignData, setCampaignData] = useState({
     subjectLines: [],
     pushNotifications: [],
+    smsMessages: [],
+    inAppMessages: [],
+    contentCards: [],
     emailTemplateHtml: '',
     subjectLineA: '',
     subjectLineB: '',
@@ -27,7 +30,7 @@ export default function App() {
     { id: 'user.first_name', label: 'First Name' },
     { id: 'user.membership_tier', label: 'Membership Tier' },
     { id: 'user.points_balance', label: 'Points Balance' },
-    { id: 'user.favorite_flavor', label: 'Favorite Flavor' },
+    { id: 'user.favorite_category', label: 'Favorite Category' },
     { id: 'user.points_needed', label: 'Points Needed' }
   ]);
 
@@ -70,6 +73,7 @@ export default function App() {
             campaignData={campaignData}
             setCampaignData={setCampaignData}
             variablesList={variablesList}
+            setVariablesList={setVariablesList}
             triggerToast={triggerToast}
           />
         );
@@ -120,10 +124,10 @@ export default function App() {
 
   const { title, desc } = getHeaderDetails();
   const missionStats = [
-    { label: 'Copy', done: campaignData.subjectLines.length > 0 || !!campaignData.subjectLineA },
-    { label: 'HTML', done: !!campaignData.emailTemplateHtml },
-    { label: 'QA', done: activeTab === 'sandbox' || activeTab === 'tester' },
-    { label: 'Export', done: !!localStorage.getItem('braze_api_key') }
+    { label: '1 Brief', done: true, tip: 'Step 1: write the campaign objective, choose tone, and select channels/tags.' },
+    { label: '2 Copy', done: campaignData.subjectLines.length > 0 || !!campaignData.subjectLineA, tip: 'Step 2: generate copy variants for email, push, SMS, IAM, and content cards.' },
+    { label: '3 QA', done: activeTab === 'sandbox' || activeTab === 'tester', tip: 'Step 3: preview Liquid with mock profiles and compare variants before launch.' },
+    { label: '4 Export', done: !!campaignData.emailTemplateHtml, tip: 'Step 4: download the HTML or export a Braze-ready template.' }
   ];
   const completedMissions = missionStats.filter(item => item.done).length;
   const progress = Math.round((completedMissions / missionStats.length) * 100);
@@ -173,12 +177,13 @@ export default function App() {
               <span>Launch Quest</span>
               <strong>{progress}%</strong>
             </div>
+            <p className="mission-card-desc">A 4-step launch checklist: brief, generate, QA, export.</p>
             <div className="mission-progress">
               <span style={{ width: `${progress}%` }}></span>
             </div>
             <div className="mission-steps">
               {missionStats.map(item => (
-                <span key={item.label} className={item.done ? 'done' : ''}>{item.label}</span>
+                <span key={item.label} className={item.done ? 'done' : ''} data-tip={item.tip}>{item.label}</span>
               ))}
             </div>
           </div>

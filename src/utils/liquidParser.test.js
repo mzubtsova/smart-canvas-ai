@@ -5,7 +5,7 @@ const context = {
   user: {
     first_name: 'Marina',
     membership_tier: 'Gold',
-    favorite_flavor: 'oreo',
+    favorite_category: 'apparel',
     points_balance: 1250,
     is_vip: true
   }
@@ -13,9 +13,9 @@ const context = {
 
 describe('parseLiquid', () => {
   it('renders variables with default and text filters', () => {
-    const html = '{{ user.first_name }} likes {{ user.favorite_flavor | uppercase }} and {{ user.city | default: "Austin" | capitalize }}';
+    const html = '{{ user.first_name }} likes {{ user.favorite_category | uppercase }} and {{ user.city | default: "Austin" | capitalize }}';
 
-    expect(parseLiquid(html, context)).toBe('Marina likes OREO and Austin');
+    expect(parseLiquid(html, context)).toBe('Marina likes APPAREL and Austin');
   });
 
   it('evaluates nested conditionals and comparisons', () => {

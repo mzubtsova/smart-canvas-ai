@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { analyzeLiquidTemplate, parseLiquid } from '../utils/liquidParser';
 import { exportTemplateToBraze } from '../services/braze';
-import { Code2, Database, Eye, AlertTriangle, Send, X, Loader2, Server, Info, Download } from 'lucide-react';
+import { Code2, Database, Eye, AlertTriangle, Send, X, Loader2, Server, Info, Download, Plus } from 'lucide-react';
 
 const MOCK_PROFILES = [
   {
     name: "Alice (VIP Gold)",
-    description: "Loyal customer with a favorite flavor & high points balance.",
+    description: "Loyal customer with a favorite category and high points balance.",
     tagClass: "tag-gold",
     tagText: "Gold VIP",
     data: {
@@ -15,14 +15,14 @@ const MOCK_PROFILES = [
         is_vip: true,
         membership_tier: "Gold",
         points_balance: 1250,
-        favorite_flavor: "Oreo Cookie",
+        favorite_category: "Seasonal Apparel",
         points_needed: 0
       }
     }
   },
   {
     name: "Bob (Silver Tier)",
-    description: "Mid-tier member with a different favorite flavor.",
+    description: "Mid-tier member with a different category preference.",
     tagClass: "tag-silver",
     tagText: "Silver",
     data: {
@@ -31,14 +31,14 @@ const MOCK_PROFILES = [
         is_vip: false,
         membership_tier: "Silver",
         points_balance: 350,
-        favorite_flavor: "Mint Chocolate Chip",
+        favorite_category: "Home Essentials",
         points_needed: 150
       }
     }
   },
   {
     name: "Charlie (New User)",
-    description: "Unauthenticated name and no favorite flavor set.",
+    description: "New customer with no category preference set.",
     tagClass: "tag-standard",
     tagText: "Standard",
     data: {
@@ -47,7 +47,7 @@ const MOCK_PROFILES = [
         is_vip: false,
         membership_tier: "Standard",
         points_balance: 0,
-        favorite_flavor: "",
+        favorite_category: "",
         points_needed: 500
       }
     }
@@ -77,20 +77,21 @@ const DEFAULT_CODE = `<!DOCTYPE html>
       <p>You have <strong>{{ user.points_balance | default: "0" }}</strong> points. Earn {{ user.points_needed | default: "100" }} more points to upgrade to VIP!</p>
     {% endif %}
 
-    {% if user.favorite_flavor %}
-      <p>🍦 P.S. We noticed your favorite flavor is <strong>{{ user.favorite_flavor }}</strong>. Come try our new seasonal twist today!</p>
+    {% if user.favorite_category %}
+      <p>Recommended for you: <strong>{{ user.favorite_category }}</strong>. Open the app to view matched offers.</p>
     {% endif %}
   </div>
 </body>
 </html>`;
 
-export default function LiquidSandbox({ campaignData, setCampaignData, variablesList, triggerToast }) {
+export default function LiquidSandbox({ campaignData, setCampaignData, variablesList, setVariablesList, triggerToast }) {
   const [code, setCode] = useState(campaignData.emailTemplateHtml || DEFAULT_CODE);
   const [activeProfileIdx, setActiveProfileIdx] = useState(0);
   const [jsonText, setJsonText] = useState(JSON.stringify(MOCK_PROFILES[0].data, null, 2));
   const [parsedHtml, setParsedHtml] = useState('');
   const [jsonError, setJsonError] = useState('');
   const [templateInsights, setTemplateInsights] = useState({ warnings: [], variables: [] });
+  const [newTagName, setNewTagName] = useState('');
 
   // Braze Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -273,6 +274,26 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
     }, 50);
   };
 
+  const addTag = () => {
+    let cleaned = newTagName.trim().toLowerCase().replace(/[^a-z0-9_.]/g, '');
+    if (!cleaned) return;
+    if (!cleaned.includes('.')) cleaned = `user.${cleaned}`;
+    if (variablesList.some(tag => tag.id === cleaned)) {
+      triggerToast('Tag already exists.');
+      return;
+    }
+
+    const label = cleaned.split('.').pop().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    setVariablesList([...variablesList, { id: cleaned, label }]);
+    setNewTagName('');
+    triggerToast(`Added tag: {{ ${cleaned} }}`);
+  };
+
+  const removeTag = (tagId) => {
+    setVariablesList(variablesList.filter(tag => tag.id !== tagId));
+    triggerToast(`Removed tag: {{ ${tagId} }}`);
+  };
+
   return (
     <div className="fade-in sandbox-workspace">
       
@@ -312,20 +333,37 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
         </div>
 
         {/* Quick-Insert Pill Buttons */}
-        <div style={{ padding: '0.5rem 1rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Click tag to insert at cursor:</span>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '60px', overflowY: 'auto' }}>
-            {variablesList.map(tag => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => insertTagAtCursor(tag.id)}
-                className="btn btn-secondary"
-                style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', textTransform: 'none', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
-                data-tip={`Insert {{ ${tag.id} }} at the cursor.`}
-              >
-                {tag.id}
+        <div className="tag-manager">
+          <div className="tag-manager-header">
+            <span>Personalization tags</span>
+            <div className="tag-add">
+              <input
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                  }
+                }}
+                placeholder="user.next_best_offer"
+                data-tip="Add a Liquid variable. Press Enter or click plus."
+              />
+              <button type="button" onClick={addTag} data-tip="Add this tag to Copilot and Sandbox.">
+                <Plus size={13} />
               </button>
+            </div>
+          </div>
+          <div className="tag-chip-row">
+            {variablesList.map(tag => (
+              <span key={tag.id} className="tag-chip">
+                <button type="button" onClick={() => insertTagAtCursor(tag.id)} data-tip={`Insert {{ ${tag.id} }} at the cursor.`}>
+                  {tag.id}
+                </button>
+                <button type="button" onClick={() => removeTag(tag.id)} aria-label={`Remove ${tag.id}`} data-tip="Remove this tag from the shared tag list.">
+                  <X size={12} />
+                </button>
+              </span>
             ))}
           </div>
         </div>
