@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { analyzeLiquidTemplate, parseLiquid } from '../utils/liquidParser';
 import { exportTemplateToBraze } from '../services/braze';
-import { Code2, Database, Eye, AlertTriangle, Send, X, Loader2, Server, Info, Download, Plus } from 'lucide-react';
+import { Code2, Database, Eye, AlertTriangle, Send, X, Loader2, Server, Info, Download, Plus, Maximize2, Minimize2 } from 'lucide-react';
 
 const MOCK_PROFILES = [
   {
@@ -92,6 +92,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
   const [jsonError, setJsonError] = useState('');
   const [templateInsights, setTemplateInsights] = useState({ warnings: [], variables: [] });
   const [newTagName, setNewTagName] = useState('');
+  const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
   // Braze Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -298,13 +299,23 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
     <div className="fade-in sandbox-workspace">
       
       {/* Panel 1: Code Editor */}
-      <div className="editor-container">
+      <div className={`editor-container ${isEditorExpanded ? 'editor-expanded' : ''}`}>
         <div className="editor-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Code2 size={16} style={{ color: 'var(--accent-primary)' }} />
             <span className="editor-title">HTML & Liquid Editor</span>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              type="button"
+              onClick={() => setIsEditorExpanded(!isEditorExpanded)}
+              className="btn btn-secondary" 
+              style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+              data-tip="Expand the HTML editor so long templates are easier to review."
+            >
+              {isEditorExpanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              {isEditorExpanded ? 'Collapse' : 'Expand'}
+            </button>
             <button 
               onClick={downloadHtml}
               className="btn btn-secondary" 

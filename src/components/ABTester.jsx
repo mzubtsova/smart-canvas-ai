@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { simulateABTest } from '../services/gemini';
 import { Users, Send, Loader2, Sparkles } from 'lucide-react';
 
@@ -19,13 +19,41 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
   const [variantAIdx, setVariantAIdx] = useState(0);
   const [variantBIdx, setVariantBIdx] = useState(1);
 
-  const handleAutofill = () => {
-    const subjects = campaignData.subjectLines && campaignData.subjectLines.length > 0
+  const generatedSubjects = useMemo(() => (
+    campaignData.subjectLines && campaignData.subjectLines.length > 0
       ? campaignData.subjectLines
-      : [campaignData.subjectLineA, campaignData.subjectLineB].filter(Boolean);
-    const pushes = campaignData.pushNotifications && campaignData.pushNotifications.length > 0
-      ? campaignData.pushNotifications
-      : [campaignData.pushNotificationA, campaignData.pushNotificationB].filter(Boolean);
+      : [campaignData.subjectLineA, campaignData.subjectLineB].filter(Boolean)
+  ), [campaignData.subjectLineA, campaignData.subjectLineB, campaignData.subjectLines]);
+
+  const generatedBodies = useMemo(() => {
+    const channelGroups = [
+      campaignData.pushNotifications,
+      campaignData.smsMessages,
+      campaignData.inAppMessages,
+      campaignData.contentCards,
+      [campaignData.pushNotificationA, campaignData.pushNotificationB].filter(Boolean)
+    ];
+
+    return channelGroups.find(group => Array.isArray(group) && group.length > 0) || [];
+  }, [
+    campaignData.contentCards,
+    campaignData.inAppMessages,
+    campaignData.pushNotificationA,
+    campaignData.pushNotificationB,
+    campaignData.pushNotifications,
+    campaignData.smsMessages
+  ]);
+
+  useEffect(() => {
+    if (!subjectA && generatedSubjects[0]) setSubjectA(generatedSubjects[0]);
+    if (!subjectB && (generatedSubjects[1] || generatedSubjects[0])) setSubjectB(generatedSubjects[1] || generatedSubjects[0]);
+    if (!copyA && generatedBodies[0]) setCopyA(generatedBodies[0]);
+    if (!copyB && (generatedBodies[1] || generatedBodies[0])) setCopyB(generatedBodies[1] || generatedBodies[0]);
+  }, [copyA, copyB, generatedBodies, generatedSubjects, subjectA, subjectB]);
+
+  const handleAutofill = () => {
+    const subjects = generatedSubjects;
+    const bodies = generatedBodies;
 
     if (subjects.length === 0) {
       triggerToast("No generated campaign found! Go to Campaign Copilot first.");
@@ -36,37 +64,29 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
     setVariantBIdx(subjects.length > 1 ? 1 : 0);
 
     setSubjectA(subjects[0] || '');
-    setCopyA(pushes[0] || '');
+    setCopyA(bodies[0] || '');
     setSubjectB(subjects[1] || subjects[0] || '');
-    setCopyB(pushes[1] || pushes[0] || '');
+    setCopyB(bodies[1] || bodies[0] || '');
     
     triggerToast("Autofilled copy variants from Campaign Copilot!");
   };
 
   const handleVariantASelect = (idx) => {
     setVariantAIdx(idx);
-    const subjects = campaignData.subjectLines && campaignData.subjectLines.length > 0
-      ? campaignData.subjectLines
-      : [campaignData.subjectLineA, campaignData.subjectLineB].filter(Boolean);
-    const pushes = campaignData.pushNotifications && campaignData.pushNotifications.length > 0
-      ? campaignData.pushNotifications
-      : [campaignData.pushNotificationA, campaignData.pushNotificationB].filter(Boolean);
+    const subjects = generatedSubjects;
+    const bodies = generatedBodies;
 
     if (subjects[idx]) setSubjectA(subjects[idx]);
-    if (pushes[idx]) setCopyA(pushes[idx]);
+    if (bodies[idx]) setCopyA(bodies[idx]);
   };
 
   const handleVariantBSelect = (idx) => {
     setVariantBIdx(idx);
-    const subjects = campaignData.subjectLines && campaignData.subjectLines.length > 0
-      ? campaignData.subjectLines
-      : [campaignData.subjectLineA, campaignData.subjectLineB].filter(Boolean);
-    const pushes = campaignData.pushNotifications && campaignData.pushNotifications.length > 0
-      ? campaignData.pushNotifications
-      : [campaignData.pushNotificationA, campaignData.pushNotificationB].filter(Boolean);
+    const subjects = generatedSubjects;
+    const bodies = generatedBodies;
 
     if (subjects[idx]) setSubjectB(subjects[idx]);
-    if (pushes[idx]) setCopyB(pushes[idx]);
+    if (bodies[idx]) setCopyB(bodies[idx]);
   };
 
   const handleSimulate = async (e) => {

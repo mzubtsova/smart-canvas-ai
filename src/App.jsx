@@ -131,6 +131,13 @@ export default function App() {
   ];
   const completedMissions = missionStats.filter(item => item.done).length;
   const progress = Math.round((completedMissions / missionStats.length) * 100);
+  const guideSteps = [
+    { label: 'Brief', text: 'Write the goal, tone, variants, and tags.', active: activeTab === 'copilot' },
+    { label: 'Generate', text: 'Create email, push, SMS, IAM, and card copy.', active: campaignData.subjectLines.length > 0 },
+    { label: 'QA', text: 'Preview Liquid with mock users and JSON.', active: activeTab === 'sandbox' },
+    { label: 'Test', text: 'Autofill variants and compare personas.', active: activeTab === 'tester' },
+    { label: 'Export', text: 'Download HTML or send to Braze.', active: activeTab === 'sandbox' && !!campaignData.emailTemplateHtml }
+  ];
 
   return (
     <div className="app-container">
@@ -227,6 +234,20 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        <section className="workflow-guide" aria-label="SmartCanvas workflow guide">
+          {guideSteps.map((step, index) => (
+            <div
+              key={step.label}
+              className={`workflow-step ${step.active ? 'active' : ''}`}
+              data-tip={`Step ${index + 1}: ${step.text}`}
+            >
+              <strong>{index + 1}</strong>
+              <span>{step.label}</span>
+              <small>{step.text}</small>
+            </div>
+          ))}
+        </section>
 
         {/* Content Render */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

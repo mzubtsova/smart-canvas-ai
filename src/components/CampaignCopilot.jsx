@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { generateCampaign } from '../services/gemini';
-import { Sparkles, Copy, ArrowRight, Mail, MessageSquare, Code, Loader2, Smartphone, PanelTop, CreditCard } from 'lucide-react';
+import { Sparkles, Copy, ArrowRight, Mail, MessageSquare, Code, Loader2, Smartphone, PanelTop, CreditCard, X, Maximize2, Minimize2 } from 'lucide-react';
 
 export default function CampaignCopilot({ apiKey, campaignData, setCampaignData, variablesList, setVariablesList, triggerToast, setActiveTab }) {
   const [objective, setObjective] = useState(
@@ -15,6 +15,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
   const [isLoading, setIsLoading] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState('subject');
   const [hasGenerated, setHasGenerated] = useState(!!campaignData.emailTemplateHtml);
+  const [isHtmlExpanded, setIsHtmlExpanded] = useState(false);
   
   const [variantsCount, setVariantsCount] = useState(2);
   const [newTagName, setNewTagName] = useState('');
@@ -61,6 +62,12 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
     setSelectedVariables([...selectedVariables, cleaned]);
     setNewTagName('');
     triggerToast(`Added custom tag: {{ ${cleaned} }}`);
+  };
+
+  const handleRemoveTag = (id) => {
+    setVariablesList(variablesList.filter(variable => variable.id !== id));
+    setSelectedVariables(selectedVariables.filter(variableId => variableId !== id));
+    triggerToast(`Removed tag: {{ ${id} }}`);
   };
 
   const handleGenerate = async (e) => {
@@ -184,15 +191,26 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
               <label className="form-label">Personalization Tags (Liquid)</label>
               <div className="form-checkbox-group" style={{ maxHeight: '180px', overflowY: 'auto' }}>
                 {variablesList.map((variable) => (
-                  <label key={variable.id} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={selectedVariables.includes(variable.id)}
-                      onChange={() => handleCheckboxChange(variable.id)}
-                      data-tip={`Use {{ ${variable.id} }} in AI output and quick-insert menus.`}
-                    />
-                    {variable.label}
-                  </label>
+                  <div key={variable.id} className="tag-select-row">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={selectedVariables.includes(variable.id)}
+                        onChange={() => handleCheckboxChange(variable.id)}
+                        data-tip={`Use {{ ${variable.id} }} in AI output and quick-insert menus.`}
+                      />
+                      {variable.label}
+                    </label>
+                    <button
+                      type="button"
+                      className="tag-remove-btn"
+                      onClick={() => handleRemoveTag(variable.id)}
+                      aria-label={`Remove ${variable.label}`}
+                      data-tip="Remove this tag from Copilot and Sandbox."
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 ))}
               </div>
               
@@ -450,16 +468,28 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                       </div>
                     </div>
 
-                    <div className="editor-container" style={{ height: '240px' }}>
+                    <div className={`editor-container ${isHtmlExpanded ? 'editor-expanded' : ''}`} style={{ height: isHtmlExpanded ? undefined : '240px' }}>
                       <div className="editor-header">
                         <span className="editor-title">Responsive HTML with Liquid logic</span>
-                        <button
-                          onClick={() => handleCopy(campaignData.emailTemplateHtml, 'HTML Email Template')}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                        >
-                          <Copy size={12} /> Copy Code
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => setIsHtmlExpanded(!isHtmlExpanded)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            data-tip="Expand the HTML editor when the template is too tall to review comfortably."
+                          >
+                            {isHtmlExpanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                            {isHtmlExpanded ? 'Collapse' : 'Expand'}
+                          </button>
+                          <button
+                            onClick={() => handleCopy(campaignData.emailTemplateHtml, 'HTML Email Template')}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                          >
+                            <Copy size={12} /> Copy Code
+                          </button>
+                        </div>
                       </div>
                       <textarea
                         id="copilot-html-editor"
