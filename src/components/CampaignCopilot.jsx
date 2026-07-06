@@ -33,7 +33,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
     if (!cleaned) return;
 
     // Sanitize: allow lowercase letters, numbers, underscores, periods
-    cleaned = cleaned.replace(/[^a-z0-9_\.]/g, '');
+    cleaned = cleaned.replace(/[^a-z0-9_.]/g, '');
     if (!cleaned) {
       triggerToast("Invalid format! Use a-z, 0-9, underscores, and periods.");
       return;
@@ -140,6 +140,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                 placeholder="What is the goal of this campaign? E.g., Promote birthday discounts, re-engage cold users..."
                 rows={4}
                 required
+                data-tip="Describe the audience, offer, timing, channel, and desired user action."
               />
             </div>
             
@@ -152,6 +153,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                   value={voice}
                   onChange={(e) => setVoice(e.target.value)}
                   style={{ width: '100%' }}
+                  data-tip="Tone steers the AI copy and the fallback demo generator."
                 >
                   <option value="Playful">🍦 Playful & Fun (e.g. DQ)</option>
                   <option value="Bold">⚡ Bold & Urgent</option>
@@ -168,6 +170,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                   value={variantsCount}
                   onChange={(e) => setVariantsCount(Number(e.target.value))}
                   style={{ width: '100%' }}
+                  data-tip="Generate more options when you want a broader creative pool for testing."
                 >
                   <option value={2}>2 (A/B Test)</option>
                   <option value={10}>10 Options</option>
@@ -186,6 +189,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                       type="checkbox"
                       checked={selectedVariables.includes(variable.id)}
                       onChange={() => handleCheckboxChange(variable.id)}
+                      data-tip={`Use {{ ${variable.id} }} in AI output and quick-insert menus.`}
                     />
                     {variable.label}
                   </label>
@@ -200,12 +204,14 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                   onChange={(e) => setNewTagName(e.target.value)}
                   placeholder="e.g. user.loyalty_tier"
                   style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem', flex: 1 }}
+                  data-tip="Add a custom Liquid path. If you omit a namespace, user. is added automatically."
                 />
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={handleAddCustomTag}
                   style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  data-tip="Adds the tag to this campaign and the sandbox mock JSON."
                 >
                   + Add Tag
                 </button>
@@ -307,7 +313,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                         <div key={idx} style={{ padding: '1rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--border-radius-md)', border: '1px solid var(--border-color)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: accentColor, textTransform: 'uppercase' }}>Option #{idx + 1}</span>
-                            <button onClick={() => handleCopy(subject, `Subject Line #${idx + 1}`)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <button onClick={() => handleCopy(subject, `Subject Line #${idx + 1}`)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                               <Copy size={14} /> <span style={{ fontSize: '0.7rem' }}>Copy</span>
                             </button>
                           </div>
@@ -355,6 +361,7 @@ export default function CampaignCopilot({ apiKey, campaignData, setCampaignData,
                             onClick={() => insertTagAtCursor(tagId)}
                             className="btn btn-secondary"
                             style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', textTransform: 'none', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                            data-tip={`Insert {{ ${tagId} }} into the HTML editor.`}
                           >
                             {tagId}
                           </button>

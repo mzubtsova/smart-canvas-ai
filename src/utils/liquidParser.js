@@ -2,7 +2,7 @@
  * Sleek client-side Liquid-like template parser.
  * Supports:
  * - Variable substitution: {{ user.first_name }}
- * - Default filters: {{ user.first_name | default: "friend" }}
+ * - Filters: default, uppercase, lowercase, capitalize
  * - Conditionals (with nesting): {% if user.is_vip %}...{% else %}...{% endif %}
  * - Comparison operators: ==, !=, >, <, >=, <=
  */
@@ -98,16 +98,84 @@ export function parseLiquid(template, context) {
     parsed = parsed.replace(fullBlock, replacement);
   }
   
-  // 2. Process Variables with Optional Default Filter
-  parsed = parsed.replace(/\{\{\s*([a-zA-Z0-9_\.]+)(?:\s*\|\s*default\s*:\s*['"]([^'"]*)['"])?\s*\}\}/g, (match, path, defaultValue) => {
+  // 2. Process variables and common Liquid filters.
+  parsed = parsed.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (match, expression) => {
+    const { path, filters } = parseVariableExpression(expression);
     const value = getNestedValue(context, path);
-    if (value === undefined || value === null || value === '') {
-      return defaultValue !== undefined ? defaultValue : '';
-    }
-    return String(value);
+    return applyFilters(value, filters);
   });
   
   return parsed;
+}
+
+export function analyzeLiquidTemplate(template) {
+  const warnings = [];
+  const missingEndif = (template.match(/\{% if/g) || []).length - (template.match(/\{% endif %\}/g) || []).length;
+  if (missingEndif > 0) {
+    warnings.push(`${missingEndif} conditional block${missingEndif === 1 ? '' : 's'} missing {% endif %}.`);
+  }
+
+  const unsupportedTags = template.match(/\{%\s*(unless|elsif|for|case|assign|capture)\b[^%]*%\}/g) || [];
+  unsupportedTags.forEach(tag => {
+    warnings.push(`Unsupported Liquid tag in sandbox preview: ${tag}`);
+  });
+
+  const variables = Array.from(template.matchAll(/\{\{\s*([^}|]+)(?:\|[^}]*)?}}/g))
+    .map(match => match[1].trim())
+    .filter(Boolean);
+
+  return {
+    warnings,
+    variables: [...new Set(variables)]
+  };
+}
+
+function parseVariableExpression(expression) {
+  const parts = expression.split('|').map(part => part.trim()).filter(Boolean);
+  const path = parts.shift() || '';
+  return {
+    path,
+    filters: parts.map(filter => {
+      const [name, ...args] = filter.split(':');
+      return {
+        name: name.trim(),
+        arg: args.join(':').trim().replace(/^['"]|['"]$/g, '')
+      };
+    })
+  };
+}
+
+function applyFilters(rawValue, filters) {
+  let value = rawValue;
+  let hasDefault = false;
+
+  filters.forEach(filter => {
+    if (filter.name === 'default') {
+      hasDefault = true;
+      if (value === undefined || value === null || value === '') {
+        value = filter.arg;
+      }
+    }
+  });
+
+  if ((value === undefined || value === null || value === '') && !hasDefault) {
+    value = '';
+  }
+
+  filters.forEach(filter => {
+    if (filter.name === 'uppercase' || filter.name === 'upcase') {
+      value = String(value).toUpperCase();
+    }
+    if (filter.name === 'lowercase' || filter.name === 'downcase') {
+      value = String(value).toLowerCase();
+    }
+    if (filter.name === 'capitalize') {
+      const text = String(value);
+      value = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    }
+  });
+
+  return String(value);
 }
 
 function evaluateCondition(conditionStr, context) {
@@ -120,7 +188,7 @@ function evaluateCondition(conditionStr, context) {
   }
   
   // Check for operators: ==, !=, >=, <=, >, <
-  const opMatch = cleaned.match(/^([a-zA-Z0-9_\.]+)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
+  const opMatch = cleaned.match(/^([a-zA-Z0-9_.]+)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
   
   if (opMatch) {
     const path = opMatch[1];
@@ -159,7 +227,7 @@ function evaluateCondition(conditionStr, context) {
   }
 }
 
-function getNestedValue(obj, path) {
+export function getNestedValue(obj, path) {
   if (!obj || !path) return undefined;
   const parts = path.split('.');
   let current = obj;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Code, Users, Settings as SettingsIcon, Terminal, Copy, Check } from 'lucide-react';
+import { Sparkles, Code, Users, Settings as SettingsIcon, Check, Moon, Sun, Trophy, ShieldCheck } from 'lucide-react';
 import CampaignCopilot from './components/CampaignCopilot';
 import LiquidSandbox from './components/LiquidSandbox';
 import ABTester from './components/ABTester';
@@ -9,6 +9,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('copilot');
   const [apiKey, setApiKey] = useState('');
   const [toast, setToast] = useState('');
+  const [theme, setTheme] = useState('dark');
   
   // Shared campaign data to pass between Copilot and Liquid Sandbox
   const [campaignData, setCampaignData] = useState({
@@ -34,7 +35,14 @@ export default function App() {
   useEffect(() => {
     const savedKey = localStorage.getItem('gemini_api_key') || '';
     setApiKey(savedKey);
+    const savedTheme = localStorage.getItem('smart_canvas_theme') || 'dark';
+    setTheme(savedTheme);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('smart_canvas_theme', theme);
+  }, [theme]);
 
   // Global Toast function
   const triggerToast = (message) => {
@@ -111,6 +119,14 @@ export default function App() {
   };
 
   const { title, desc } = getHeaderDetails();
+  const missionStats = [
+    { label: 'Copy', done: campaignData.subjectLines.length > 0 || !!campaignData.subjectLineA },
+    { label: 'HTML', done: !!campaignData.emailTemplateHtml },
+    { label: 'QA', done: activeTab === 'sandbox' || activeTab === 'tester' },
+    { label: 'Export', done: !!localStorage.getItem('braze_api_key') }
+  ];
+  const completedMissions = missionStats.filter(item => item.done).length;
+  const progress = Math.round((completedMissions / missionStats.length) * 100);
 
   return (
     <div className="app-container">
@@ -127,6 +143,7 @@ export default function App() {
           <button
             onClick={() => setActiveTab('copilot')}
             className={`sidebar-item ${activeTab === 'copilot' ? 'active' : ''}`}
+            data-tip="Start here: describe the campaign goal, pick tone, and generate copy plus email HTML."
           >
             <Sparkles size={18} />
             Campaign Copilot
@@ -134,6 +151,7 @@ export default function App() {
           <button
             onClick={() => setActiveTab('sandbox')}
             className={`sidebar-item ${activeTab === 'sandbox' ? 'active' : ''}`}
+            data-tip="QA station: preview Liquid personalization against mock customer JSON before launch."
           >
             <Code size={18} />
             Liquid Sandbox
@@ -141,6 +159,7 @@ export default function App() {
           <button
             onClick={() => setActiveTab('tester')}
             className={`sidebar-item ${activeTab === 'tester' ? 'active' : ''}`}
+            data-tip="Compare variants with simulated buyer personas before spending real audience attention."
           >
             <Users size={18} />
             A/B Persona Tester
@@ -148,10 +167,26 @@ export default function App() {
         </div>
 
         <div className="sidebar-footer">
+          <div className="mission-card">
+            <div className="mission-card-top">
+              <Trophy size={15} />
+              <span>Launch Quest</span>
+              <strong>{progress}%</strong>
+            </div>
+            <div className="mission-progress">
+              <span style={{ width: `${progress}%` }}></span>
+            </div>
+            <div className="mission-steps">
+              {missionStats.map(item => (
+                <span key={item.label} className={item.done ? 'done' : ''}>{item.label}</span>
+              ))}
+            </div>
+          </div>
           <button
             onClick={() => setActiveTab('settings')}
             className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`}
             style={{ width: '100%' }}
+            data-tip="Add optional Gemini and Braze keys. Without keys, SmartCanvas runs in demo mode."
           >
             <SettingsIcon size={18} />
             Settings
@@ -168,9 +203,23 @@ export default function App() {
           </div>
 
           {/* Connected API Status indicator */}
-          <div className={`api-badge ${apiKey ? 'connected' : 'simulated'}`}>
-            <span className="indicator"></span>
-            <span>{apiKey ? 'Live API Mode' : 'Simulated Mock Mode'}</span>
+          <div className="header-actions">
+            <button
+              className="icon-btn"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              data-tip={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+            <div className={`api-badge ${apiKey ? 'connected' : 'simulated'}`} data-tip={apiKey ? 'Gemini requests use your saved browser API key.' : 'No API key needed: demo mode uses local campaign simulations.'}>
+              <span className="indicator"></span>
+              <span>{apiKey ? 'Live API Mode' : 'Simulated Mock Mode'}</span>
+            </div>
+            <div className="api-badge qa" data-tip="Parser checks Liquid conditions, variables, fallbacks, and sandbox preview health.">
+              <ShieldCheck size={14} />
+              <span>{completedMissions}/4 Quest Steps</span>
+            </div>
           </div>
         </header>
 

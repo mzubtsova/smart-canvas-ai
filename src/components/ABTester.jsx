@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { simulateABTest } from '../services/gemini';
-import { Users, AlertTriangle, Send, Loader2, Sparkles, Check, CheckCircle2 } from 'lucide-react';
+import { Users, Send, Loader2, Sparkles } from 'lucide-react';
 
 export default function ABTester({ apiKey, campaignData, triggerToast }) {
   const [objective, setObjective] = useState(
@@ -101,6 +101,15 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
     if (score >= 50) return 'score-medium';
     return 'score-low';
   };
+
+  const averageScore = (key) => {
+    if (!simResults?.length) return 0;
+    return Math.round(simResults.reduce((sum, persona) => sum + Number(persona[key] || 0), 0) / simResults.length);
+  };
+
+  const avgA = averageScore('scoreA');
+  const avgB = averageScore('scoreB');
+  const winningVariant = avgA === avgB ? 'Tie' : avgA > avgB ? 'Variant A' : 'Variant B';
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -295,10 +304,17 @@ export default function ABTester({ apiKey, campaignData, triggerToast }) {
             </div>
           ) : (
             <div className="fade-in" style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
-              <h3 style={{ fontSize: '1.05rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Sparkles size={16} style={{ color: 'var(--accent-tertiary)' }} />
-                A/B Simulator Audience Report
-              </h3>
+              <div className="report-header">
+                <h3>
+                  <Sparkles size={16} style={{ color: 'var(--accent-tertiary)' }} />
+                  A/B Simulator Audience Report
+                </h3>
+                <div className="winner-chip" data-tip="Average simulated open/click score across all personas. Use this as directional QA, not a replacement for real A/B results.">
+                  <span>Predicted Winner</span>
+                  <strong>{winningVariant}</strong>
+                  <small>A {avgA}% / B {avgB}%</small>
+                </div>
+              </div>
               
               <div className="persona-grid" style={{ flex: 1, overflowY: 'auto', maxHeight: '490px', paddingRight: '0.5rem' }}>
                 {simResults.map((persona, index) => (

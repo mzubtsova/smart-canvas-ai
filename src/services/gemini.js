@@ -5,7 +5,7 @@
  */
 
 // Model to use
-const MODEL_NAME = 'gemini-3.5-flash';
+const MODEL_NAME = 'gemini-2.5-flash';
 
 /**
  * Safely parse JSON from LLM markdown response blocks if present.
@@ -386,7 +386,7 @@ function getMockCampaign(objective, voice, variables, variantsCount = 2) {
   };
 }
 
-function getMockABTest(objective, subjectA, subjectB) {
+function getMockABTest(objective) {
   const lowercaseObj = objective.toLowerCase();
   const isDairyQueen = lowercaseObj.includes('dairy queen') || lowercaseObj.includes('blizzard') || lowercaseObj.includes('dq');
   

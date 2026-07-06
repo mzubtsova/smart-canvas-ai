@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { parseLiquid } from '../utils/liquidParser';
+import { analyzeLiquidTemplate, parseLiquid } from '../utils/liquidParser';
 import { exportTemplateToBraze } from '../services/braze';
-import { Code2, Database, Eye, AlertTriangle, RefreshCw, Sparkles, Send, X, Loader2, Server, Info } from 'lucide-react';
+import { Code2, Database, Eye, AlertTriangle, Send, X, Loader2, Server, Info, Download } from 'lucide-react';
 
 const MOCK_PROFILES = [
   {
@@ -90,6 +90,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
   const [jsonText, setJsonText] = useState(JSON.stringify(MOCK_PROFILES[0].data, null, 2));
   const [parsedHtml, setParsedHtml] = useState('');
   const [jsonError, setJsonError] = useState('');
+  const [templateInsights, setTemplateInsights] = useState({ warnings: [], variables: [] });
 
   // Braze Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -146,7 +147,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
       if (modified) {
         return JSON.stringify(obj, null, 2);
       }
-    } catch (e) {
+    } catch {
       // Ignore JSON parsing errors
     }
     return jsonStr;
@@ -177,6 +178,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
       }));
 
       const rendered = parseLiquid(code, parsedContext);
+      setTemplateInsights(analyzeLiquidTemplate(code));
       setParsedHtml(rendered);
     } catch (e) {
       if (e instanceof SyntaxError) {
@@ -185,7 +187,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
         console.error(e);
       }
     }
-  }, [code, jsonText]);
+  }, [code, jsonText, setCampaignData]);
 
   const handleJsonChange = (val) => {
     setJsonText(val);
@@ -205,6 +207,17 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
     setExportName(`SmartCanvas Campaign - ${timestamp}`);
     setExportSubject(campaignData.subjectLineA || 'Special Offer for You!');
     setShowExportModal(true);
+  };
+
+  const downloadHtml = () => {
+    const blob = new Blob([code], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${exportName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'smartcanvas-template'}.html`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    triggerToast('Downloaded HTML template.');
   };
 
   const handleConfirmExport = async (e) => {
@@ -261,7 +274,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
   };
 
   return (
-    <div className="fade-in split-view-triple" style={{ flex: 1, height: 'calc(100vh - 12rem)', minHeight: '550px', position: 'relative' }}>
+    <div className="fade-in sandbox-workspace">
       
       {/* Panel 1: Code Editor */}
       <div className="editor-container">
@@ -272,9 +285,18 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button 
+              onClick={downloadHtml}
+              className="btn btn-secondary" 
+              style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+              data-tip="Download the current HTML as a reusable email template file."
+            >
+              <Download size={12} /> HTML
+            </button>
+            <button 
               onClick={handleOpenExport}
               className="btn btn-success" 
               style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+              data-tip="Create or simulate a Braze email template using the HTML currently in the editor."
             >
               <Send size={12} /> Export to Braze
             </button>
@@ -282,6 +304,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
               onClick={resetTemplate} 
               className="btn btn-secondary" 
               style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderColor: 'transparent' }}
+              data-tip="Restore the starter Liquid template."
             >
               Reset
             </button>
@@ -299,6 +322,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
                 onClick={() => insertTagAtCursor(tag.id)}
                 className="btn btn-secondary"
                 style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', textTransform: 'none', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                data-tip={`Insert {{ ${tag.id} }} at the cursor.`}
               >
                 {tag.id}
               </button>
@@ -317,7 +341,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
       </div>
 
       {/* Panel 2: User Profiles & JSON Editor */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '520px' }}>
+      <div className="sandbox-middle">
         
         {/* Profile Selector */}
         <div className="panel" style={{ padding: '1rem', overflowY: 'auto', flex: '1.2' }}>
@@ -331,6 +355,7 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
                 key={idx}
                 className={`profile-pill ${activeProfileIdx === idx ? 'active' : ''}`}
                 onClick={() => selectProfile(idx)}
+                data-tip="Click to swap the customer data used by the live preview."
               >
                 <div style={{ marginRight: '0.5rem' }}>
                   <div className="profile-name">{profile.name}</div>
@@ -370,6 +395,21 @@ export default function LiquidSandbox({ campaignData, setCampaignData, variables
               borderRadius: '0'
             }}
           />
+        </div>
+
+        <div className="qa-strip">
+          <div className="qa-tile" data-tip="Unique Liquid variables detected in this template.">
+            <strong>{templateInsights.variables.length}</strong>
+            <span>Variables</span>
+          </div>
+          <div className={`qa-tile ${templateInsights.warnings.length ? 'warn' : 'ok'}`} data-tip={templateInsights.warnings.length ? templateInsights.warnings.join(' ') : 'No parser warnings found.'}>
+            <strong>{templateInsights.warnings.length}</strong>
+            <span>Warnings</span>
+          </div>
+          <div className={`qa-tile ${jsonError ? 'warn' : 'ok'}`} data-tip={jsonError || 'JSON context is valid.'}>
+            <strong>{jsonError ? 'Fix' : 'Live'}</strong>
+            <span>Preview</span>
+          </div>
         </div>
       </div>
 
